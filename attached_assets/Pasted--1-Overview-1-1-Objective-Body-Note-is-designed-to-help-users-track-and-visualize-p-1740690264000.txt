@@ -1,0 +1,61 @@
+## **1. Overview**
+
+### **1.1 Objective**
+
+Body Note is designed to help users track and visualize physical pain over time. The MVP will focus on a **picture-based tracking system** where users take daily photos of affected body parts, overlay past images for alignment, and mark pain areas using color-coded indicators. This allows for **trend analysis and a visual history** of pain progression to support self-awareness and medical consultations.
+
+### **1.2 Key Benefits**
+
+- **Simple & Fast Pain Tracking:** Take a picture, mark pain areas, and save.
+- **Visual History of Pain Changes:** See how pain evolves over days/weeks.
+- **Easy Doctor Communication:** Provides a structured pain history for medical discussions.
+
+---
+
+## **2. Features & Functionality**
+
+### **2.1 Core Features (MVP Scope)**
+
+### **Pain Tracking & Visualization**
+
+- **Daily Photo Upload:** Users take a picture of the affected area.
+- **Image Overlay for Alignment:** Semi-transparent overlay of the last image to maintain consistency.
+- **Color-Based Pain Marking:** Users tap on the image to mark pain using **five color-coded indicators**, each representing a different type of pain:
+    - **Red:** Sharp/Stabbing pain
+    - **Blue:** Dull/Aching pain
+    - **Yellow:** Burning pain
+    - **Green:** Tingling/Numbness
+    - **Purple:** Throbbing pain
+- **Pain Intensity Selection:** Each color has **five levels of intensity** to indicate severity.
+
+### **Pain Progression & Review**
+
+- **Gallery View:** Users browse past entries to see pain evolution.
+- **Basic Trends:** Simple visual indicators of pain progression over time.
+
+### **Data Management & Export**
+
+- **Local & Cloud Storage:** Save pain entries securely.
+- **Export to PDF:** Users generate a simple pain report for doctors.
+
+---
+
+## **3. Technical Approach**
+
+### **3.1 Platform (MVP Decision: Web App First)**
+
+- **Web App First:** Faster to develop using React + Supabase/Firebase.
+- **Mobile App Later:** Possible React Native expansion for deeper camera integration.
+
+### **3.2 AI & Image Processing (Future Enhancements, Not MVP)**
+
+- **AI-Assisted Pain Pattern Recognition:** Post-MVP feature.
+- **Auto-Alignment of Photos:** Potential use of OpenCV.js for better image consistency.
+
+---
+
+## **4. User Experience (UX) Considerations**
+
+- **Fast Entry Flow:** Take a picture → Mark pain → Save.
+- **Intuitive UI:** Simple interface with large tap areas for marking pain.
+- **Guided Onboarding:** Short tutorial on how to use overlays and pain markers.
