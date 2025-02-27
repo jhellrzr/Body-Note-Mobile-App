@@ -66,10 +66,7 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
     ctx.beginPath();
     ctx.moveTo(marker.points[0].x, marker.points[0].y);
 
-    // Calculate opacity using exponential scale for more contrast
-    // intensity 1 -> 0.3 (very transparent)
-    // intensity 3 -> 0.65 (medium opacity)
-    // intensity 5 -> 1.0 (fully opaque)
+    // Calculate opacity based on intensity
     const alpha = 0.3 + Math.pow((marker.intensity - 1) / 4, 2) * 0.7;
 
     // Set line properties
@@ -86,8 +83,6 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
       ctx.lineTo(p2.x, p2.y);
     }
     ctx.stroke();
-
-    // Reset global alpha for next drawing
     ctx.globalAlpha = 1;
   };
 
