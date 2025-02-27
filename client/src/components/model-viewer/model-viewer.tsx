@@ -86,13 +86,15 @@ export default function ModelViewer({ onSave }: Props) {
         console.log('Loading hand model...');
         const loader = new GLTFLoader();
         loader.load(
-          'attached_assets/uploads_files_5594354_Jewelry+Hand+Holder.glb',
+          './attached_assets/uploads_files_5594354_Jewelry+Hand+Holder.glb',
           (gltf) => {
             console.log('Hand model loaded successfully');
             const model = gltf.scene;
-            model.scale.set(0.5, 0.5, 0.5);
+            model.scale.set(0.02, 0.02, 0.02); // Adjusted scale
             model.position.set(0, 0, 0);
             model.rotation.x = -Math.PI / 2;
+
+            // Make model selectable and transparent
             model.traverse((child) => {
               if (child instanceof THREE.Mesh) {
                 child.userData.isSelectable = true;
@@ -104,8 +106,22 @@ export default function ModelViewer({ onSave }: Props) {
                 }
               }
             });
+
             scene.add(model);
             modelRef.current = model;
+
+            // Adjust camera to focus on model
+            const box = new THREE.Box3().setFromObject(model);
+            const center = box.getCenter(new THREE.Vector3());
+            const size = box.getSize(new THREE.Vector3());
+
+            camera.position.set(
+              center.x,
+              center.y + size.y * 2,
+              center.z + size.z * 3
+            );
+            camera.lookAt(center);
+            controls.target.copy(center);
           },
           (progress) => {
             console.log('Loading progress:', (progress.loaded / progress.total * 100) + '%');
@@ -176,15 +192,14 @@ export default function ModelViewer({ onSave }: Props) {
     }
     window.addEventListener('resize', handleResize);
 
-    // Handle mouse events for pain marking
-    function handleMouseDown(event: MouseEvent) {
+    // Handle mouse/touch events for pain marking
+    function handlePointerDown(event: MouseEvent | TouchEvent) {
       if (mode !== 'mark') return;
       setIsDrawing(true);
-      const intersectionPoint = getIntersectionPoint(event);
-      if (intersectionPoint) {
-        setCurrentPoints([intersectionPoint]);
-        // Create line
-        const geometry = new THREE.BufferGeometry().setFromPoints([intersectionPoint, intersectionPoint]);
+      const point = getIntersectionPoint(event);
+      if (point) {
+        setCurrentPoints([point]);
+        const geometry = new THREE.BufferGeometry().setFromPoints([point, point]);
         const material = new THREE.LineBasicMaterial({ color: 0xff0000 });
         const line = new THREE.Line(geometry, material);
         scene.add(line);
@@ -192,11 +207,11 @@ export default function ModelViewer({ onSave }: Props) {
       }
     }
 
-    function handleMouseMove(event: MouseEvent) {
+    function handlePointerMove(event: MouseEvent | TouchEvent) {
       if (!isDrawing || mode !== 'mark') return;
-      const intersectionPoint = getIntersectionPoint(event);
-      if (intersectionPoint && currentLine) {
-        const points = [...currentPoints, intersectionPoint];
+      const point = getIntersectionPoint(event);
+      if (point && currentLine) {
+        const points = [...currentPoints, point];
         setCurrentPoints(points);
         const geometry = new THREE.BufferGeometry().setFromPoints(points);
         currentLine.geometry.dispose();
@@ -204,7 +219,7 @@ export default function ModelViewer({ onSave }: Props) {
       }
     }
 
-    function handleMouseUp() {
+    function handlePointerUp() {
       if (!isDrawing || mode !== 'mark') return;
       setIsDrawing(false);
       if (currentPoints.length > 1) {
@@ -218,10 +233,20 @@ export default function ModelViewer({ onSave }: Props) {
       setCurrentLine(null);
     }
 
-    function getIntersectionPoint(event: MouseEvent): THREE.Vector3 | null {
+    function getIntersectionPoint(event: MouseEvent | TouchEvent): THREE.Vector3 | null {
       const rect = container.getBoundingClientRect();
-      mouseRef.current.x = ((event.clientX - rect.left) / container.clientWidth) * 2 - 1;
-      mouseRef.current.y = -((event.clientY - rect.top) / container.clientHeight) * 2 + 1;
+      let clientX: number, clientY: number;
+
+      if (event instanceof TouchEvent) {
+        clientX = event.touches[0].clientX;
+        clientY = event.touches[0].clientY;
+      } else {
+        clientX = event.clientX;
+        clientY = event.clientY;
+      }
+
+      mouseRef.current.x = ((clientX - rect.left) / container.clientWidth) * 2 - 1;
+      mouseRef.current.y = -((clientY - rect.top) / container.clientHeight) * 2 + 1;
 
       raycasterRef.current.setFromCamera(mouseRef.current, camera);
       const intersects = raycasterRef.current.intersectObjects(scene.children, true);
@@ -234,10 +259,14 @@ export default function ModelViewer({ onSave }: Props) {
       return null;
     }
 
-    container.addEventListener('mousedown', handleMouseDown);
-    container.addEventListener('mousemove', handleMouseMove);
-    container.addEventListener('mouseup', handleMouseUp);
-    container.addEventListener('mouseleave', handleMouseUp);
+    container.addEventListener('mousedown', handlePointerDown);
+    container.addEventListener('mousemove', handlePointerMove);
+    container.addEventListener('mouseup', handlePointerUp);
+    container.addEventListener('mouseleave', handlePointerUp);
+    container.addEventListener('touchstart', handlePointerDown);
+    container.addEventListener('touchmove', handlePointerMove);
+    container.addEventListener('touchend', handlePointerUp);
+    container.addEventListener('touchcancel', handlePointerUp);
 
     // Animation loop
     function animate() {
@@ -258,10 +287,14 @@ export default function ModelViewer({ onSave }: Props) {
     // Cleanup
     return () => {
       window.removeEventListener('resize', handleResize);
-      container.removeEventListener('mousedown', handleMouseDown);
-      container.removeEventListener('mousemove', handleMouseMove);
-      container.removeEventListener('mouseup', handleMouseUp);
-      container.removeEventListener('mouseleave', handleMouseUp);
+      container.removeEventListener('mousedown', handlePointerDown);
+      container.removeEventListener('mousemove', handlePointerMove);
+      container.removeEventListener('mouseup', handlePointerUp);
+      container.removeEventListener('mouseleave', handlePointerUp);
+      container.removeEventListener('touchstart', handlePointerDown);
+      container.removeEventListener('touchmove', handlePointerMove);
+      container.removeEventListener('touchend', handlePointerUp);
+      container.removeEventListener('touchcancel', handlePointerUp);
       if (controlsRef.current) {
         controlsRef.current.dispose();
       }
@@ -303,7 +336,7 @@ export default function ModelViewer({ onSave }: Props) {
       </div>
 
       <div className="relative w-full aspect-square border rounded-lg overflow-hidden bg-gray-100">
-        <div ref={containerRef} className="w-full h-full" />
+        <div ref={containerRef} className="w-full h-full touch-none" />
       </div>
     </div>
   );
