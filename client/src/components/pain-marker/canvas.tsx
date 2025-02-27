@@ -13,6 +13,7 @@ interface Props {
   image: string;
   color: string;
   intensity: number;
+  brushSize: number;
   onSave: (markers: PainMarker[]) => void;
 }
 
@@ -24,13 +25,12 @@ const colorMap = {
   PURPLE: '#800080'
 };
 
-export default function PainMarkerCanvas({ image, color, intensity, onSave }: Props) {
+export default function PainMarkerCanvas({ image, color, intensity, brushSize, onSave }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [markers, setMarkers] = useState<PainMarker[]>([]);
   const [imageSize, setImageSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
   const [isDrawing, setIsDrawing] = useState(false);
   const [currentPath, setCurrentPath] = useState<{ x: number; y: number }[]>([]);
-  const [brushSize, setBrushSize] = useState(6); // Default brush size
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -66,12 +66,14 @@ export default function PainMarkerCanvas({ image, color, intensity, onSave }: Pr
     ctx.beginPath();
     ctx.moveTo(marker.points[0].x, marker.points[0].y);
 
-    // Calculate color opacity based on intensity (20% to 100%)
-    const baseColor = colorMap[marker.type as keyof typeof colorMap];
-    const alpha = 0.2 + (marker.intensity * 0.16); // Maps 1-5 to 0.36-1.0
+    // Calculate opacity using exponential scale for more contrast
+    // intensity 1 -> 0.3 (very transparent)
+    // intensity 3 -> 0.65 (medium opacity)
+    // intensity 5 -> 1.0 (fully opaque)
+    const alpha = 0.3 + Math.pow((marker.intensity - 1) / 4, 2) * 0.7;
 
     // Set line properties
-    ctx.strokeStyle = baseColor;
+    ctx.strokeStyle = colorMap[marker.type as keyof typeof colorMap];
     ctx.globalAlpha = alpha;
     ctx.lineWidth = marker.brushSize;
     ctx.lineCap = 'round';
