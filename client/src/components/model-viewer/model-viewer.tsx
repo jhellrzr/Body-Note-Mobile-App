@@ -8,15 +8,23 @@ interface Props {
   onSave: (painMarkers: any[]) => void;
 }
 
+interface PainMarker {
+  position: THREE.Vector3;
+  color: string;
+  intensity: number;
+}
+
 export default function ModelViewer({ onSave }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
+  const raycasterRef = useRef<THREE.Raycaster>(new THREE.Raycaster());
+  const mouseRef = useRef<THREE.Vector2>(new THREE.Vector2());
   const [mode, setMode] = useState<'view' | 'mark'>('view');
   const [modelType, setModelType] = useState<'hand' | 'knee'>('hand');
-  const [painMarkers, setPainMarkers] = useState<any[]>([]);
+  const [painMarkers, setPainMarkers] = useState<PainMarker[]>([]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -55,18 +63,28 @@ export default function ModelViewer({ onSave }: Props) {
       // Palm
       const palm = new THREE.Mesh(
         new THREE.BoxGeometry(1, 1.5, 0.2),
-        new THREE.MeshPhongMaterial({ color: 0xe0e0e0 })
+        new THREE.MeshPhongMaterial({ 
+          color: 0xe0e0e0,
+          transparent: true,
+          opacity: 0.8
+        })
       );
+      palm.userData.isSelectable = true;
       group.add(palm);
 
       // Fingers
       for (let i = 0; i < 5; i++) {
         const finger = new THREE.Mesh(
           new THREE.BoxGeometry(0.2, 0.7, 0.2),
-          new THREE.MeshPhongMaterial({ color: 0xe0e0e0 })
+          new THREE.MeshPhongMaterial({ 
+            color: 0xe0e0e0,
+            transparent: true,
+            opacity: 0.8
+          })
         );
         finger.position.y = 1;
         finger.position.x = (i - 2) * 0.22;
+        finger.userData.isSelectable = true;
         group.add(finger);
       }
 
@@ -80,24 +98,39 @@ export default function ModelViewer({ onSave }: Props) {
       // Main joint
       const joint = new THREE.Mesh(
         new THREE.SphereGeometry(0.8, 32, 32),
-        new THREE.MeshPhongMaterial({ color: 0xe0e0e0 })
+        new THREE.MeshPhongMaterial({ 
+          color: 0xe0e0e0,
+          transparent: true,
+          opacity: 0.8
+        })
       );
+      joint.userData.isSelectable = true;
       group.add(joint);
 
       // Upper leg
       const upperLeg = new THREE.Mesh(
         new THREE.CylinderGeometry(0.4, 0.4, 2),
-        new THREE.MeshPhongMaterial({ color: 0xe0e0e0 })
+        new THREE.MeshPhongMaterial({ 
+          color: 0xe0e0e0,
+          transparent: true,
+          opacity: 0.8
+        })
       );
       upperLeg.position.y = 1.5;
+      upperLeg.userData.isSelectable = true;
       group.add(upperLeg);
 
       // Lower leg
       const lowerLeg = new THREE.Mesh(
         new THREE.CylinderGeometry(0.4, 0.4, 2),
-        new THREE.MeshPhongMaterial({ color: 0xe0e0e0 })
+        new THREE.MeshPhongMaterial({ 
+          color: 0xe0e0e0,
+          transparent: true,
+          opacity: 0.8
+        })
       );
       lowerLeg.position.y = -1.5;
+      lowerLeg.userData.isSelectable = true;
       group.add(lowerLeg);
 
       return group;
@@ -119,6 +152,16 @@ export default function ModelViewer({ onSave }: Props) {
     let currentModel = modelType === 'hand' ? createHandModel() : createKneeModel();
     scene.add(currentModel);
 
+    // Create pain marker
+    function createPainMarker(position: THREE.Vector3) {
+      const markerGeometry = new THREE.SphereGeometry(0.05);
+      const markerMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+      const marker = new THREE.Mesh(markerGeometry, markerMaterial);
+      marker.position.copy(position);
+      scene.add(marker);
+      return marker;
+    }
+
     // Handle model type changes
     function updateModel() {
       scene.remove(currentModel);
@@ -137,10 +180,36 @@ export default function ModelViewer({ onSave }: Props) {
     }
     window.addEventListener('resize', handleResize);
 
+    // Handle mouse click for marking pain points
+    function handleClick(event: MouseEvent) {
+      if (mode !== 'mark') return;
+
+      const rect = container.getBoundingClientRect();
+      mouseRef.current.x = ((event.clientX - rect.left) / container.clientWidth) * 2 - 1;
+      mouseRef.current.y = -((event.clientY - rect.top) / container.clientHeight) * 2 + 1;
+
+      raycasterRef.current.setFromCamera(mouseRef.current, camera);
+      const intersects = raycasterRef.current.intersectObjects(scene.children, true);
+
+      for (const intersect of intersects) {
+        if (intersect.object.userData.isSelectable) {
+          const marker = createPainMarker(intersect.point);
+          setPainMarkers(prev => [...prev, { 
+            position: intersect.point.clone(),
+            color: '#ff0000',
+            intensity: 1
+          }]);
+          break;
+        }
+      }
+    }
+
+    container.addEventListener('click', handleClick);
+
     // Animation loop
     function animate() {
       requestAnimationFrame(animate);
-      if (controlsRef.current) {
+      if (controlsRef.current && mode === 'view') {
         controlsRef.current.update();
       }
       renderer.render(scene, camera);
@@ -153,6 +222,7 @@ export default function ModelViewer({ onSave }: Props) {
     // Cleanup
     return () => {
       window.removeEventListener('resize', handleResize);
+      container.removeEventListener('click', handleClick);
       if (controlsRef.current) {
         controlsRef.current.dispose();
       }
@@ -161,7 +231,7 @@ export default function ModelViewer({ onSave }: Props) {
         container.removeChild(renderer.domElement);
       }
     };
-  }, [modelType]);
+  }, [modelType, mode]);
 
   return (
     <div className="space-y-4">
