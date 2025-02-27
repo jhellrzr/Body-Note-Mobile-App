@@ -18,6 +18,7 @@ export const painEntries = pgTable("pain_entries", {
     type: keyof typeof painTypes;
     intensity: number;
     points: { x: number; y: number }[];
+    brushSize: number;
   }[]>().notNull(),
   notes: text("notes")
 });

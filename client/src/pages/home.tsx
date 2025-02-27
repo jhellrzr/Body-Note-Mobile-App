@@ -5,6 +5,7 @@ import { Camera, Upload } from "lucide-react";
 import PainMarkerCanvas from "@/components/pain-marker/canvas";
 import ColorSelector from "@/components/pain-marker/color-selector";
 import IntensitySelector from "@/components/pain-marker/intensity-selector";
+import BrushSizeSelector from "@/components/pain-marker/brush-size-selector";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -14,6 +15,7 @@ export default function Home() {
   const [image, setImage] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState<string>("RED");
   const [intensity, setIntensity] = useState(1);
+  const [brushSize, setBrushSize] = useState(6);
   const { toast } = useToast();
 
   const mutation = useMutation({
@@ -117,6 +119,7 @@ export default function Home() {
                 image={image}
                 color={selectedColor}
                 intensity={intensity}
+                brushSize={brushSize}
                 onSave={(markers) =>
                   mutation.mutate({
                     imageUrl: image,
@@ -127,6 +130,7 @@ export default function Home() {
               />
               <ColorSelector value={selectedColor} onChange={setSelectedColor} />
               <IntensitySelector value={intensity} onChange={setIntensity} />
+              <BrushSizeSelector value={brushSize} onChange={setBrushSize} />
             </div>
           )}
         </CardContent>

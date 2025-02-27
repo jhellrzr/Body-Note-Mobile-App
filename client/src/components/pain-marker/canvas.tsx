@@ -6,6 +6,7 @@ interface PainMarker {
   type: keyof typeof painTypes;
   intensity: number;
   points: { x: number; y: number }[];
+  brushSize: number;
 }
 
 interface Props {
@@ -29,6 +30,7 @@ export default function PainMarkerCanvas({ image, color, intensity, onSave }: Pr
   const [imageSize, setImageSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
   const [isDrawing, setIsDrawing] = useState(false);
   const [currentPath, setCurrentPath] = useState<{ x: number; y: number }[]>([]);
+  const [brushSize, setBrushSize] = useState(6); // Default brush size
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -71,7 +73,7 @@ export default function PainMarkerCanvas({ image, color, intensity, onSave }: Pr
     // Set line properties
     ctx.strokeStyle = baseColor;
     ctx.globalAlpha = alpha;
-    ctx.lineWidth = 2 + marker.intensity * 4; // Line width increases with intensity (6px to 22px)
+    ctx.lineWidth = marker.brushSize;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
 
@@ -125,7 +127,8 @@ export default function PainMarkerCanvas({ image, color, intensity, onSave }: Pr
     const marker: PainMarker = {
       type: color as keyof typeof painTypes,
       intensity,
-      points: [...currentPath, point]
+      points: [...currentPath, point],
+      brushSize
     };
 
     // Clear and redraw everything
@@ -147,7 +150,8 @@ export default function PainMarkerCanvas({ image, color, intensity, onSave }: Pr
     setMarkers(prev => [...prev, {
       type: color as keyof typeof painTypes,
       intensity,
-      points: currentPath
+      points: currentPath,
+      brushSize
     }]);
 
     setIsDrawing(false);
