@@ -10,7 +10,7 @@ import BrushSizeSelector from "@/components/pain-marker/brush-size-selector";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { PainEntry } from "@shared/schema";
+import type { PainEntry, PainMarker, PainMarker2D, PainMarker3D } from "@shared/schema";
 
 type Mode = 'upload' | 'model' | 'drawing';
 
@@ -135,7 +135,7 @@ export default function Home() {
                 onSave={(markers) =>
                   mutation.mutate({
                     imageUrl: image,
-                    painMarkers: markers,
+                    painMarkers: markers as PainMarker[],
                     notes: "",
                   })
                 }
@@ -152,7 +152,7 @@ export default function Home() {
                 onSave={(markers) =>
                   mutation.mutate({
                     imageUrl: "",
-                    painMarkers: markers,
+                    painMarkers: markers as PainMarker3D[],
                     notes: "",
                   })
                 }

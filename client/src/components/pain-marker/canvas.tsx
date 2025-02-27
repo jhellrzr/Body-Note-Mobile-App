@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Download, Save } from "lucide-react";
+import { Download } from "lucide-react";
 import { painTypes } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
-import { ColorSelector } from "@/components/pain-marker/color-selector";
-import { IntensitySelector } from "@/components/pain-marker/intensity-selector";
-import { BrushSizeSelector } from "@/components/pain-marker/brush-size-selector";
+import ColorSelector from "@/components/pain-marker/color-selector";
+import IntensitySelector from "@/components/pain-marker/intensity-selector";
+import BrushSizeSelector from "@/components/pain-marker/brush-size-selector";
 
 interface PainMarker {
   type: keyof typeof painTypes;
@@ -279,25 +279,27 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
 
   return (
     <div className="space-y-4">
-      <div className="relative">
-        <canvas
-          ref={canvasRef}
-          onMouseDown={startDrawing}
-          onMouseMove={draw}
-          onMouseUp={stopDrawing}
-          onMouseLeave={stopDrawing}
-          onTouchStart={startDrawing}
-          onTouchMove={draw}
-          onTouchEnd={stopDrawing}
-          onTouchCancel={stopDrawing}
-          className="w-full cursor-crosshair border rounded-lg touch-none bg-white"
-          style={{ aspectRatio: canvasRef.current ? canvasRef.current.width / canvasRef.current.height : 1 }}
-        />
-        <div className="mt-4 space-y-4">
-          <ColorSelector value={selectedColor} onChange={setSelectedColor} />
-          <IntensitySelector value={selectedIntensity} onChange={setIntensity} />
-          <BrushSizeSelector value={selectedBrushSize} onChange={setBrushSize} />
+      <div className="space-y-4">
+        <ColorSelector value={selectedColor} onChange={setSelectedColor} />
+        <IntensitySelector value={selectedIntensity} onChange={setIntensity} color={selectedColor} />
+        <BrushSizeSelector value={selectedBrushSize} onChange={setBrushSize} />
+
+        <div className="relative">
+          <canvas
+            ref={canvasRef}
+            onMouseDown={startDrawing}
+            onMouseMove={draw}
+            onMouseUp={stopDrawing}
+            onMouseLeave={stopDrawing}
+            onTouchStart={startDrawing}
+            onTouchMove={draw}
+            onTouchEnd={stopDrawing}
+            onTouchCancel={stopDrawing}
+            className="w-full cursor-crosshair border rounded-lg touch-none bg-white"
+            style={{ aspectRatio: canvasRef.current ? canvasRef.current.width / canvasRef.current.height : 1 }}
+          />
         </div>
+
         <div className="flex justify-end space-x-2">
           <Button variant="outline" onClick={handleClear}>
             Clear
