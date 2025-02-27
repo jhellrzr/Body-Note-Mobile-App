@@ -3,6 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { painTypes } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
+import ColorSelector from './color-selector';
+import IntensitySelector from './intensity-selector';
+import BrushSizeSelector from './brush-size-selector';
 
 interface PainMarker {
   type: keyof typeof painTypes;
@@ -292,7 +295,9 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize }:
       </div>
 
       <div className="space-y-6 bg-gray-50 p-4 rounded-lg">
-        {/*Removed placeholder components*/}
+        <ColorSelector value={selectedColor} onChange={setSelectedColor} />
+        <IntensitySelector value={selectedIntensity} onChange={setIntensity} color={selectedColor} />
+        <BrushSizeSelector value={selectedBrushSize} onChange={setBrushSize} />
       </div>
 
       <div className="flex justify-end space-x-2">
