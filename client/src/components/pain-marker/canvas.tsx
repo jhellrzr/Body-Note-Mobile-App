@@ -279,11 +279,7 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
 
   return (
     <div className="space-y-4">
-      <div className="space-y-4">
-        <ColorSelector value={selectedColor} onChange={setSelectedColor} />
-        <IntensitySelector value={selectedIntensity} onChange={setIntensity} color={selectedColor} />
-        <BrushSizeSelector value={selectedBrushSize} onChange={setBrushSize} />
-
+      <div className="bg-gray-50 p-4 rounded-lg space-y-4">
         <div className="relative">
           <canvas
             ref={canvasRef}
@@ -298,6 +294,12 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
             className="w-full cursor-crosshair border rounded-lg touch-none bg-white"
             style={{ aspectRatio: canvasRef.current ? canvasRef.current.width / canvasRef.current.height : 1 }}
           />
+        </div>
+
+        <div className="space-y-4">
+          <ColorSelector value={selectedColor} onChange={setSelectedColor} />
+          <IntensitySelector value={selectedIntensity} onChange={setIntensity} color={selectedColor} />
+          <BrushSizeSelector value={selectedBrushSize} onChange={setBrushSize} />
         </div>
 
         <div className="flex justify-end space-x-2">
