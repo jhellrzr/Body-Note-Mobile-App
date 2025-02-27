@@ -30,8 +30,63 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
   const [markers, setMarkers] = useState<PainMarker[]>([]);
   const [imageSize, setImageSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
   const [isDrawing, setIsDrawing] = useState(false);
-  const [currentPath, setCurrentPath] = useState<{ x: number; y: number }[]>([]);
+  const [currentPoints, setCurrentPoints] = useState<{ x: number; y: number }[]>([]);
 
+  // Function to redraw everything on the canvas
+  const redrawCanvas = () => {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext("2d");
+    if (!canvas || !ctx) return;
+
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw base image
+    const img = new Image();
+    img.src = image;
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+    // Draw all completed markers
+    markers.forEach(marker => {
+      if (marker.points.length < 2) return;
+
+      ctx.beginPath();
+      ctx.moveTo(marker.points[0].x, marker.points[0].y);
+
+      const alpha = 0.3 + (marker.intensity / 5) * 0.7;
+      ctx.strokeStyle = colorMap[marker.type as keyof typeof colorMap];
+      ctx.globalAlpha = alpha;
+      ctx.lineWidth = marker.brushSize;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      marker.points.forEach((point, i) => {
+        if (i > 0) ctx.lineTo(point.x, point.y);
+      });
+      ctx.stroke();
+    });
+
+    // Draw current stroke if exists
+    if (currentPoints.length > 1) {
+      ctx.beginPath();
+      ctx.moveTo(currentPoints[0].x, currentPoints[0].y);
+
+      ctx.strokeStyle = colorMap[color as keyof typeof colorMap];
+      ctx.globalAlpha = 0.3 + (intensity / 5) * 0.7;
+      ctx.lineWidth = brushSize;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      currentPoints.forEach((point, i) => {
+        if (i > 0) ctx.lineTo(point.x, point.y);
+      });
+      ctx.stroke();
+    }
+
+    ctx.globalAlpha = 1;
+  };
+
+  // Setup canvas and load image
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext("2d");
@@ -40,7 +95,6 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
     const img = new Image();
     img.src = image;
     img.onload = () => {
-      // Set canvas size to match image aspect ratio
       const maxWidth = 800;
       const scale = Math.min(1, maxWidth / img.width);
       const width = img.width * scale;
@@ -49,42 +103,14 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
       canvas.width = width;
       canvas.height = height;
       setImageSize({ width, height });
-
-      // Draw image
-      ctx.drawImage(img, 0, 0, width, height);
-
-      // Draw existing markers
-      markers.forEach(marker => {
-        drawPainMarker(ctx, marker);
-      });
+      redrawCanvas();
     };
-  }, [image, markers]);
+  }, [image]);
 
-  const drawPainMarker = (ctx: CanvasRenderingContext2D, marker: PainMarker) => {
-    if (marker.points.length < 2) return;
-
-    ctx.beginPath();
-    ctx.moveTo(marker.points[0].x, marker.points[0].y);
-
-    // Calculate opacity based on intensity
-    const alpha = 0.3 + Math.pow((marker.intensity - 1) / 4, 2) * 0.7;
-
-    // Set line properties
-    ctx.strokeStyle = colorMap[marker.type as keyof typeof colorMap];
-    ctx.globalAlpha = alpha;
-    ctx.lineWidth = marker.brushSize;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-
-    // Draw smooth line through points
-    for (let i = 1; i < marker.points.length; i++) {
-      const p1 = marker.points[i - 1];
-      const p2 = marker.points[i];
-      ctx.lineTo(p2.x, p2.y);
-    }
-    ctx.stroke();
-    ctx.globalAlpha = 1;
-  };
+  // Redraw whenever markers or current points change
+  useEffect(() => {
+    redrawCanvas();
+  }, [markers, currentPoints, color, intensity, brushSize]);
 
   const getCanvasPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
@@ -105,7 +131,7 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
     if (!point) return;
 
     setIsDrawing(true);
-    setCurrentPath([point]);
+    setCurrentPoints([point]);
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -114,60 +140,26 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
     const point = getCanvasPoint(e);
     if (!point) return;
 
-    setCurrentPath(prev => [...prev, point]);
-
-    // Draw the current stroke
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext("2d");
-    if (!canvas || !ctx) return;
-
-    const marker: PainMarker = {
-      type: color as keyof typeof painTypes,
-      intensity,
-      points: [...currentPath, point],
-      brushSize
-    };
-
-    // Clear and redraw everything
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const img = new Image();
-    img.src = image;
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-    // Draw all completed markers
-    markers.forEach(m => drawPainMarker(ctx, m));
-
-    // Draw current marker
-    drawPainMarker(ctx, marker);
+    setCurrentPoints(prev => [...prev, point]);
   };
 
   const handleMouseUp = () => {
-    if (!isDrawing || currentPath.length < 2) return;
+    if (!isDrawing || currentPoints.length < 2) return;
 
     setMarkers(prev => [...prev, {
       type: color as keyof typeof painTypes,
       intensity,
-      points: currentPath,
+      points: currentPoints,
       brushSize
     }]);
 
     setIsDrawing(false);
-    setCurrentPath([]);
+    setCurrentPoints([]);
   };
 
   const handleClear = () => {
     setMarkers([]);
-    // Redraw the canvas with just the image
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext("2d");
-    if (!canvas || !ctx) return;
-
-    const img = new Image();
-    img.src = image;
-    img.onload = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-    };
+    setCurrentPoints([]);
   };
 
   return (
