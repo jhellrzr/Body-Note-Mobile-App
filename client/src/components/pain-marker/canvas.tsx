@@ -15,6 +15,14 @@ interface Props {
   onSave: (markers: PainMarker[]) => void;
 }
 
+const colorMap = {
+  RED: '#ff0000',
+  BLUE: '#0000ff',
+  YELLOW: '#ffff00',
+  GREEN: '#00ff00',
+  PURPLE: '#800080'
+};
+
 export default function PainMarkerCanvas({ image, color, intensity, onSave }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [markers, setMarkers] = useState<PainMarker[]>([]);
@@ -57,10 +65,13 @@ export default function PainMarkerCanvas({ image, color, intensity, onSave }: Pr
     ctx.moveTo(marker.points[0].x, marker.points[0].y);
 
     // Calculate color opacity based on intensity (20% to 100%)
-    const baseColor = marker.type.toLowerCase();
+    const baseColor = colorMap[marker.type as keyof typeof colorMap];
     const alpha = 0.2 + (marker.intensity * 0.16); // Maps 1-5 to 0.36-1.0
-    ctx.strokeStyle = `${baseColor}${Math.round(alpha * 255).toString(16).padStart(2, '0')}`;
-    ctx.lineWidth = 4 + marker.intensity * 2; // Line width increases with intensity
+
+    // Set line properties
+    ctx.strokeStyle = baseColor;
+    ctx.globalAlpha = alpha;
+    ctx.lineWidth = 2 + marker.intensity * 4; // Line width increases with intensity (6px to 22px)
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
 
@@ -71,6 +82,9 @@ export default function PainMarkerCanvas({ image, color, intensity, onSave }: Pr
       ctx.lineTo(p2.x, p2.y);
     }
     ctx.stroke();
+
+    // Reset global alpha for next drawing
+    ctx.globalAlpha = 1;
   };
 
   const getCanvasPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
