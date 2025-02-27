@@ -26,7 +26,7 @@ const colorMap = {
   PURPLE: '#800080'
 };
 
-export default function PainMarkerCanvas({ image, color, intensity, brushSize, onSave }: Props) {
+export default function PainMarkerCanvas({ image, color, intensity, brushSize }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [markers, setMarkers] = useState<PainMarker[]>([]);
@@ -166,34 +166,50 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    // Generate filename with timestamp
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const filename = `pain-tracking-${timestamp}.png`;
-
-    // Get image data
     const imageData = canvas.toDataURL('image/png');
 
-    // For mobile browsers, open image in new tab
-    const newTab = window.open();
-    if (newTab) {
-      newTab.document.write(`
-        <html>
-          <head>
-            <title>Save Image</title>
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-            <style>
-              body { margin: 0; display: flex; flex-direction: column; align-items: center; }
-              img { max-width: 100%; height: auto; }
-              p { font-family: system-ui; text-align: center; padding: 1rem; }
-            </style>
-          </head>
-          <body>
-            <p>Press and hold the image to save it to your device</p>
-            <img src="${imageData}" alt="Pain tracking">
-          </body>
-        </html>
-      `);
-    }
+    // Create temporary elements for the save UI
+    const saveDiv = document.createElement('div');
+    saveDiv.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      z-index: 9999;
+    `;
+
+    const closeButton = document.createElement('button');
+    closeButton.innerText = '← Back to Drawing';
+    closeButton.style.cssText = `
+      padding: 10px 20px;
+      margin: 10px;
+      background: #f3f4f6;
+      border: none;
+      border-radius: 8px;
+      font-family: system-ui;
+    `;
+    closeButton.onclick = () => document.body.removeChild(saveDiv);
+
+    const instructions = document.createElement('p');
+    instructions.innerText = 'Press and hold the image below to save it to your device';
+    instructions.style.cssText = 'font-family: system-ui; text-align: center; margin: 10px 0;';
+
+    const img = document.createElement('img');
+    img.src = imageData;
+    img.alt = 'Pain tracking image';
+    img.style.cssText = 'max-width: 100%; height: auto;';
+
+    saveDiv.appendChild(closeButton);
+    saveDiv.appendChild(instructions);
+    saveDiv.appendChild(img);
+    document.body.appendChild(saveDiv);
   };
 
   useEffect(() => {
