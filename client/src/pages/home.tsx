@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Camera } from "lucide-react";
+import { Camera, Upload } from "lucide-react";
 import PainMarkerCanvas from "@/components/pain-marker/canvas";
 import ColorSelector from "@/components/pain-marker/color-selector";
 import IntensitySelector from "@/components/pain-marker/intensity-selector";
@@ -31,8 +31,12 @@ export default function Home() {
   });
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log("File selection triggered");
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file) {
+      console.log("No file selected");
+      return;
+    }
 
     // Check file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
@@ -44,14 +48,17 @@ export default function Home() {
       return;
     }
 
+    console.log("Reading file:", file.name);
     const reader = new FileReader();
     reader.onload = (e) => {
       const result = e.target?.result;
       if (typeof result === 'string') {
+        console.log("File loaded successfully");
         setImage(result);
       }
     };
-    reader.onerror = () => {
+    reader.onerror = (error) => {
+      console.error("Error reading file:", error);
       toast({
         title: "Error",
         description: "Failed to read image file",
@@ -66,37 +73,42 @@ export default function Home() {
       <Card>
         <CardContent className="p-6">
           {!image ? (
-            <div className="text-center">
-              <div className="space-y-4">
-                {/* Mobile camera capture */}
+            <div className="text-center space-y-4">
+              <div>
                 <input
                   type="file"
                   accept="image/*"
                   capture="environment"
-                  className="hidden"
-                  id="camera-input-mobile"
+                  id="camera-input"
                   onChange={handleFileSelect}
+                  className="absolute w-0 h-0 opacity-0"
                 />
-                <label htmlFor="camera-input-mobile" className="block">
-                  <Button className="w-full h-16" variant="outline">
-                    <Camera className="mr-2 h-6 w-6" />
-                    Take Photo
-                  </Button>
-                </label>
+                <Button
+                  className="w-full h-16"
+                  variant="outline"
+                  onClick={() => document.getElementById('camera-input')?.click()}
+                >
+                  <Camera className="mr-2 h-6 w-6" />
+                  Take Photo
+                </Button>
+              </div>
 
-                {/* Regular file upload */}
+              <div>
                 <input
                   type="file"
-                  accept="image/*;capture=camera"
-                  className="hidden"
+                  accept="image/*"
                   id="file-input"
                   onChange={handleFileSelect}
+                  className="absolute w-0 h-0 opacity-0"
                 />
-                <label htmlFor="file-input" className="block">
-                  <Button className="w-full h-16" variant="outline">
-                    Choose Image
-                  </Button>
-                </label>
+                <Button
+                  className="w-full h-16"
+                  variant="outline"
+                  onClick={() => document.getElementById('file-input')?.click()}
+                >
+                  <Upload className="mr-2 h-6 w-6" />
+                  Upload Image
+                </Button>
               </div>
             </div>
           ) : (
