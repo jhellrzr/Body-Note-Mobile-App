@@ -167,7 +167,7 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize }:
 
     // Create a new canvas with extra height for the legend
     const finalCanvas = document.createElement('canvas');
-    const legendHeight = 120; // Height for the legend section
+    const legendHeight = 140; // Increased height for better spacing
     finalCanvas.width = canvas.width;
     finalCanvas.height = canvas.height + legendHeight;
 
@@ -183,15 +183,20 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize }:
 
     // Draw legend title
     ctx.fillStyle = '#000000';
-    ctx.font = '16px system-ui';
+    ctx.font = 'bold 16px system-ui';
     ctx.textAlign = 'center';
-    ctx.fillText('Pain Types', canvas.width / 2, canvas.height + 25);
+    ctx.fillText('Pain Types', canvas.width / 2, canvas.height + 30);
+
+    // Calculate layout
+    const entries = Object.entries(painTypes);
+    const padding = 20;
+    const availableWidth = canvas.width - (padding * 2);
+    const itemSpacing = availableWidth / entries.length;
 
     // Draw color squares and labels
-    const itemWidth = canvas.width / Object.keys(painTypes).length;
-    Object.entries(painTypes).forEach(([color, label], index) => {
-      const x = (itemWidth * index) + (itemWidth / 2) - 40;
-      const y = canvas.height + 45;
+    entries.forEach(([color, label], index) => {
+      const x = padding + (itemSpacing * index);
+      const y = canvas.height + 60;
 
       // Draw color square
       ctx.fillStyle = colorMap[color as keyof typeof colorMap];
@@ -208,7 +213,7 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize }:
     const date = new Date().toLocaleDateString();
     ctx.font = '12px system-ui';
     ctx.textAlign = 'right';
-    ctx.fillText(date, canvas.width - 10, canvas.height + legendHeight - 10);
+    ctx.fillText(date, canvas.width - padding, canvas.height + legendHeight - 15);
 
     return finalCanvas;
   };
