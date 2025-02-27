@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
 import { painTypes } from "@shared/schema";
 
 interface PainMarker {
@@ -103,11 +104,9 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
 
     let x, y;
     if ('touches' in e) {
-      // Touch event
       x = (e.touches[0].clientX - rect.left) * scaleX;
       y = (e.touches[0].clientY - rect.top) * scaleY;
     } else {
-      // Mouse event
       x = (e.clientX - rect.left) * scaleX;
       y = (e.clientY - rect.top) * scaleY;
     }
@@ -163,6 +162,19 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
     drawImage();
   };
 
+  const handleSaveToDevice = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    // Create a temporary link
+    const link = document.createElement('a');
+    link.download = `pain-tracking-${new Date().toISOString().slice(0, 10)}.png`;
+    link.href = canvas.toDataURL('image/png');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   useEffect(() => {
     drawImage();
   }, [markers, color, intensity, brushSize]);
@@ -186,7 +198,11 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
         <Button variant="outline" onClick={handleClear}>
           Clear
         </Button>
-        <Button onClick={() => onSave(markers)}>Save</Button>
+        <Button variant="outline" onClick={handleSaveToDevice}>
+          <Download className="mr-2 h-4 w-4" />
+          Save to Device
+        </Button>
+        <Button onClick={() => onSave(markers)}>Done</Button>
       </div>
     </div>
   );
