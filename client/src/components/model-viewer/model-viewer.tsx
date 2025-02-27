@@ -2,8 +2,9 @@ import { useRef, useEffect, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
-import { Button } from '@/components/ui/button';
-import { Hand, MoveHorizontal } from 'lucide-react';
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Hand } from 'lucide-react';
 
 interface Props {
   onSave: (painMarkers: any[]) => void;
@@ -24,6 +25,9 @@ export default function ModelViewer({ onSave }: Props) {
   const raycasterRef = useRef<THREE.Raycaster>(new THREE.Raycaster());
   const mouseRef = useRef<THREE.Vector2>(new THREE.Vector2());
   const modelRef = useRef<THREE.Group | null>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [currentLine, setCurrentLine] = useState<THREE.Line | null>(null);
+  const [currentPoints, setCurrentPoints] = useState<THREE.Vector3[]>([]);
   const [mode, setMode] = useState<'view' | 'mark'>('view');
   const [modelType, setModelType] = useState<'hand' | 'knee'>('hand');
   const [painMarkers, setPainMarkers] = useState<PainMarker[]>([]);
@@ -62,20 +66,6 @@ export default function ModelViewer({ onSave }: Props) {
     controls.maxDistance = 10;
     controlsRef.current = controls;
 
-    // Create pain marker
-    function createPainMarker(position: THREE.Vector3) {
-      const markerGeometry = new THREE.SphereGeometry(0.05);
-      const markerMaterial = new THREE.MeshBasicMaterial({ 
-        color: 0xff0000,
-        transparent: true,
-        opacity: 0.8
-      });
-      const marker = new THREE.Mesh(markerGeometry, markerMaterial);
-      marker.position.copy(position);
-      scene.add(marker);
-      return marker;
-    }
-
     // Load models based on type
     function loadModel() {
       if (modelRef.current) {
@@ -83,13 +73,16 @@ export default function ModelViewer({ onSave }: Props) {
       }
 
       if (modelType === 'hand') {
+        console.log('Loading hand model...');
         const loader = new GLTFLoader();
         loader.load(
           '/attached_assets/uploads_files_5594354_Jewelry+Hand+Holder.glb',
           (gltf) => {
+            console.log('Hand model loaded successfully');
             const model = gltf.scene;
-            model.scale.set(2, 2, 2);
+            model.scale.set(0.5, 0.5, 0.5); // Reduced scale
             model.position.set(0, 0, 0);
+            model.rotation.x = -Math.PI / 2; // Rotate to face up
             model.traverse((child) => {
               if (child instanceof THREE.Mesh) {
                 child.userData.isSelectable = true;
@@ -105,7 +98,7 @@ export default function ModelViewer({ onSave }: Props) {
             modelRef.current = model;
           },
           (progress) => {
-            console.log('Loading model:', (progress.loaded / progress.total * 100) + '%');
+            console.log('Loading progress:', (progress.loaded / progress.total * 100) + '%');
           },
           (error) => {
             console.error('Error loading GLB:', error);
@@ -182,10 +175,49 @@ export default function ModelViewer({ onSave }: Props) {
     }
     window.addEventListener('resize', handleResize);
 
-    // Handle mouse click for marking pain points
-    function handleClick(event: MouseEvent) {
+    // Handle mouse events for pain marking
+    function handleMouseDown(event: MouseEvent) {
       if (mode !== 'mark') return;
+      setIsDrawing(true);
+      const intersectionPoint = getIntersectionPoint(event);
+      if (intersectionPoint) {
+        setCurrentPoints([intersectionPoint]);
+        // Create line
+        const geometry = new THREE.BufferGeometry().setFromPoints([intersectionPoint, intersectionPoint]);
+        const material = new THREE.LineBasicMaterial({ color: 0xff0000 });
+        const line = new THREE.Line(geometry, material);
+        scene.add(line);
+        setCurrentLine(line);
+      }
+    }
 
+    function handleMouseMove(event: MouseEvent) {
+      if (!isDrawing || mode !== 'mark') return;
+      const intersectionPoint = getIntersectionPoint(event);
+      if (intersectionPoint && currentLine) {
+        const points = [...currentPoints, intersectionPoint];
+        setCurrentPoints(points);
+        const geometry = new THREE.BufferGeometry().setFromPoints(points);
+        currentLine.geometry.dispose();
+        currentLine.geometry = geometry;
+      }
+    }
+
+    function handleMouseUp() {
+      if (!isDrawing || mode !== 'mark') return;
+      setIsDrawing(false);
+      if (currentPoints.length > 1) {
+        setPainMarkers(prev => [...prev, {
+          position: currentPoints[0],
+          color: '#ff0000',
+          intensity: 1
+        }]);
+      }
+      setCurrentPoints([]);
+      setCurrentLine(null);
+    }
+
+    function getIntersectionPoint(event: MouseEvent): THREE.Vector3 | null {
       const rect = container.getBoundingClientRect();
       mouseRef.current.x = ((event.clientX - rect.left) / container.clientWidth) * 2 - 1;
       mouseRef.current.y = -((event.clientY - rect.top) / container.clientHeight) * 2 + 1;
@@ -195,18 +227,16 @@ export default function ModelViewer({ onSave }: Props) {
 
       for (const intersect of intersects) {
         if (intersect.object.userData.isSelectable) {
-          const marker = createPainMarker(intersect.point);
-          setPainMarkers(prev => [...prev, { 
-            position: intersect.point.clone(),
-            color: '#ff0000',
-            intensity: 1
-          }]);
-          break;
+          return intersect.point;
         }
       }
+      return null;
     }
 
-    container.addEventListener('click', handleClick);
+    container.addEventListener('mousedown', handleMouseDown);
+    container.addEventListener('mousemove', handleMouseMove);
+    container.addEventListener('mouseup', handleMouseUp);
+    container.addEventListener('mouseleave', handleMouseUp);
 
     // Animation loop
     function animate() {
@@ -227,7 +257,10 @@ export default function ModelViewer({ onSave }: Props) {
     // Cleanup
     return () => {
       window.removeEventListener('resize', handleResize);
-      container.removeEventListener('click', handleClick);
+      container.removeEventListener('mousedown', handleMouseDown);
+      container.removeEventListener('mousemove', handleMouseMove);
+      container.removeEventListener('mouseup', handleMouseUp);
+      container.removeEventListener('mouseleave', handleMouseUp);
       if (controlsRef.current) {
         controlsRef.current.dispose();
       }
@@ -236,7 +269,7 @@ export default function ModelViewer({ onSave }: Props) {
         container.removeChild(renderer.domElement);
       }
     };
-  }, [modelType, mode]);
+  }, [modelType, mode, isDrawing, currentPoints, currentLine]);
 
   return (
     <div className="space-y-4">
@@ -255,22 +288,17 @@ export default function ModelViewer({ onSave }: Props) {
             Knee
           </Button>
         </div>
-        <Button
-          variant={mode === 'mark' ? 'default' : 'outline'}
-          onClick={() => setMode(mode === 'view' ? 'mark' : 'view')}
-        >
-          {mode === 'view' ? (
-            <>
-              <MoveHorizontal className="mr-2 h-4 w-4" />
-              Move Model
-            </>
-          ) : (
-            <>
-              <Hand className="mr-2 h-4 w-4" />
-              Mark Pain
-            </>
-          )}
-        </Button>
+        <div className="flex items-center space-x-2">
+          <Switch
+            id="draw-mode"
+            checked={mode === 'mark'}
+            onCheckedChange={(checked) => setMode(checked ? 'mark' : 'view')}
+          />
+          <Label htmlFor="draw-mode" className="flex items-center space-x-2">
+            <Hand className="h-4 w-4" />
+            <span>Mark Pain</span>
+          </Label>
+        </div>
       </div>
 
       <div className="relative w-full aspect-square border rounded-lg overflow-hidden bg-gray-100">
