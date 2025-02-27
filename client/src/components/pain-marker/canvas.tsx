@@ -19,6 +19,7 @@ interface Props {
   color: string;
   intensity: number;
   brushSize: number;
+  onSave: (markers: PainMarker[]) => void;
 }
 
 const colorMap = {
@@ -29,7 +30,7 @@ const colorMap = {
   PURPLE: '#800080'
 };
 
-export default function PainMarkerCanvas({ image, color, intensity, brushSize }: Props) {
+export default function PainMarkerCanvas({ image, color, intensity, brushSize, onSave }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [markers, setMarkers] = useState<PainMarker[]>([]);
