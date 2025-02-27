@@ -278,7 +278,7 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
   }, [markers, selectedColor, selectedIntensity, selectedBrushSize]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="relative">
         <canvas
           ref={canvasRef}
@@ -295,7 +295,7 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
         />
       </div>
 
-      <div className="space-y-6 bg-gray-50 p-4 rounded-lg">
+      <div className="space-y-4 bg-gray-50 p-4 rounded-lg">
         <ColorSelector value={selectedColor} onChange={setSelectedColor} />
         <IntensitySelector value={selectedIntensity} onChange={setIntensity} color={selectedColor} />
         <BrushSizeSelector value={selectedBrushSize} onChange={setBrushSize} />

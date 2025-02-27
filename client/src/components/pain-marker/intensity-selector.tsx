@@ -30,7 +30,7 @@ export default function IntensitySelector({ value, onChange, color = 'RED' }: Pr
           min={1}
           max={5}
           step={1}
-          className="[&_[role=slider]]:bg-[var(--slider-color)] [&_[role=slider]]:border-[var(--slider-color)] [&>.relative>::before]:bg-[var(--slider-color)]"
+          className="[&_[role=slider]]:bg-[var(--slider-color)] [&_[role=slider]]:border-[var(--slider-color)] [&_[role=range]]:bg-[var(--slider-color)]"
         />
       </div>
       <div className="flex justify-between text-sm text-muted-foreground">
