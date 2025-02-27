@@ -31,6 +31,9 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize }:
   const [isDrawing, setIsDrawing] = useState(false);
   const [markers, setMarkers] = useState<PainMarker[]>([]);
   const [currentMarker, setCurrentMarker] = useState<PainMarker | null>(null);
+  const [selectedColor, setSelectedColor] = useState<string>(color); // Added state for color selector
+  const [selectedIntensity, setIntensity] = useState<number>(intensity); // Added state for intensity selector
+  const [selectedBrushSize, setBrushSize] = useState<number>(brushSize); // Added state for brush size selector
   const { toast } = useToast();
 
   useEffect(() => {
@@ -122,10 +125,10 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize }:
 
     setIsDrawing(true);
     setCurrentMarker({
-      type: color as keyof typeof painTypes,
-      intensity,
+      type: selectedColor as keyof typeof painTypes, // Use selectedColor
+      intensity: selectedIntensity, // Use selectedIntensity
       points: [point],
-      brushSize
+      brushSize: selectedBrushSize // Use selectedBrushSize
     });
   };
 
@@ -268,30 +271,66 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize }:
 
   useEffect(() => {
     drawImage();
-  }, [markers, color, intensity, brushSize]);
+  }, [markers, selectedColor, selectedIntensity, selectedBrushSize]); // Use selected states
+
+
+  // Placeholder components - replace with your actual components
+  const ColorSelector = ({value, onChange}: {value:string, onChange:(value:string)=>void}) => (
+    <div>
+      {/* Your color selector implementation here */}
+      <p>Color: {value}</p> {/*Example*/}
+    </div>
+  );
+
+  const IntensitySelector = ({value, onChange}: {value:number, onChange:(value:number)=>void}) => (
+    <div>
+      {/* Your intensity selector implementation here */}
+      <p>Intensity: {value}</p> {/*Example*/}
+    </div>
+  );
+
+  const BrushSizeSelector = ({value, onChange}: {value:number, onChange:(value:number)=>void}) => (
+    <div>
+      {/* Your brush size selector implementation here */}
+      <p>Brush Size: {value}</p> {/*Example*/}
+    </div>
+  );
+
 
   return (
-    <div className="space-y-4">
-      <canvas
-        ref={canvasRef}
-        onMouseDown={startDrawing}
-        onMouseMove={draw}
-        onMouseUp={stopDrawing}
-        onMouseLeave={stopDrawing}
-        onTouchStart={startDrawing}
-        onTouchMove={draw}
-        onTouchEnd={stopDrawing}
-        onTouchCancel={stopDrawing}
-        className="w-full cursor-crosshair border rounded-lg touch-none"
-        style={{ aspectRatio: canvasRef.current ? canvasRef.current.width / canvasRef.current.height : 1 }}
-      />
+    <div className="space-y-6">
+      <div className="relative">
+        <canvas
+          ref={canvasRef}
+          onMouseDown={startDrawing}
+          onMouseMove={draw}
+          onMouseUp={stopDrawing}
+          onMouseLeave={stopDrawing}
+          onTouchStart={startDrawing}
+          onTouchMove={draw}
+          onTouchEnd={stopDrawing}
+          onTouchCancel={stopDrawing}
+          className="w-full cursor-crosshair border rounded-lg touch-none bg-white"
+          style={{ aspectRatio: canvasRef.current ? canvasRef.current.width / canvasRef.current.height : 1 }}
+        />
+      </div>
+
+      <div className="space-y-6 bg-gray-50 p-4 rounded-lg">
+        <ColorSelector value={selectedColor} onChange={setSelectedColor} />
+
+        <div className="space-y-6 pt-2">
+          <IntensitySelector value={selectedIntensity} onChange={setIntensity} />
+          <BrushSizeSelector value={selectedBrushSize} onChange={setBrushSize} />
+        </div>
+      </div>
+
       <div className="flex justify-end space-x-2">
-        <Button variant="outline" onClick={handleClear}>
+        <Button variant="outline" onClick={handleClear} className="px-6">
           Clear
         </Button>
-        <Button onClick={handleSaveToDevice}>
+        <Button onClick={handleSaveToDevice} className="px-6">
           <Download className="mr-2 h-4 w-4" />
-          Save to Device
+          Save
         </Button>
       </div>
     </div>
