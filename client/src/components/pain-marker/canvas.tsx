@@ -302,10 +302,10 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
       </div>
 
       <div className="flex justify-end space-x-2">
-        <Button variant="outline" onClick={handleClear} className="px-6">
+        <Button variant="outline" onClick={handleClear}>
           Clear
         </Button>
-        <Button onClick={handleSaveToDevice} className="px-6">
+        <Button onClick={handleSaveToDevice}>
           <Download className="mr-2 h-4 w-4" />
           Save
         </Button>
