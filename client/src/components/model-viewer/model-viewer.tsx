@@ -10,18 +10,10 @@ function Scene() {
   return (
     <>
       <mesh>
-        <boxGeometry args={[1, 1, 1]} />
+        <boxGeometry />
         <meshStandardMaterial color="orange" />
       </mesh>
     </>
-  );
-}
-
-function Loader() {
-  return (
-    <div className="absolute inset-0 flex items-center justify-center">
-      <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
-    </div>
   );
 }
 
@@ -29,7 +21,7 @@ export default function ModelViewer({ onSave }: Props) {
   return (
     <div className="relative w-full aspect-square border rounded-lg overflow-hidden bg-gray-100">
       <ThreeErrorBoundary>
-        <Suspense fallback={<Loader />}>
+        <Suspense fallback={<div>Loading...</div>}>
           <Canvas
             gl={{
               antialias: true,
