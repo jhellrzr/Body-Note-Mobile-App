@@ -161,12 +161,64 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize }:
     drawImage();
   };
 
-  const handleSaveToDevice = async () => {
+  const createFinalImage = async () => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) return null;
+
+    // Create a new canvas with extra height for the legend
+    const finalCanvas = document.createElement('canvas');
+    const legendHeight = 120; // Height for the legend section
+    finalCanvas.width = canvas.width;
+    finalCanvas.height = canvas.height + legendHeight;
+
+    const ctx = finalCanvas.getContext('2d');
+    if (!ctx) return null;
+
+    // Draw the original canvas content
+    ctx.drawImage(canvas, 0, 0);
+
+    // Draw legend background
+    ctx.fillStyle = '#f3f4f6';
+    ctx.fillRect(0, canvas.height, canvas.width, legendHeight);
+
+    // Draw legend title
+    ctx.fillStyle = '#000000';
+    ctx.font = '16px system-ui';
+    ctx.textAlign = 'center';
+    ctx.fillText('Pain Types', canvas.width / 2, canvas.height + 25);
+
+    // Draw color squares and labels
+    const itemWidth = canvas.width / Object.keys(painTypes).length;
+    Object.entries(painTypes).forEach(([color, label], index) => {
+      const x = (itemWidth * index) + (itemWidth / 2) - 40;
+      const y = canvas.height + 45;
+
+      // Draw color square
+      ctx.fillStyle = colorMap[color as keyof typeof colorMap];
+      ctx.fillRect(x, y, 15, 15);
+
+      // Draw label
+      ctx.fillStyle = '#000000';
+      ctx.font = '14px system-ui';
+      ctx.textAlign = 'left';
+      ctx.fillText(label, x + 20, y + 12);
+    });
+
+    // Add timestamp
+    const date = new Date().toLocaleDateString();
+    ctx.font = '12px system-ui';
+    ctx.textAlign = 'right';
+    ctx.fillText(date, canvas.width - 10, canvas.height + legendHeight - 10);
+
+    return finalCanvas;
+  };
+
+  const handleSaveToDevice = async () => {
+    const finalCanvas = await createFinalImage();
+    if (!finalCanvas) return;
 
     const blob = await new Promise<Blob>((resolve) => {
-      canvas.toBlob((blob) => {
+      finalCanvas.toBlob((blob) => {
         if (blob) resolve(blob);
       }, 'image/png');
     });
