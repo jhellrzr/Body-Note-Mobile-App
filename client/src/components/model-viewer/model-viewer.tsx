@@ -49,9 +49,9 @@ export default function ModelViewer({ onSave }: Props) {
     cameraRef.current = camera;
 
     // Initialize renderer
-    const renderer = new THREE.WebGLRenderer({ 
+    const renderer = new THREE.WebGLRenderer({
       antialias: true,
-      alpha: true 
+      alpha: true
     });
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
@@ -90,9 +90,9 @@ export default function ModelViewer({ onSave }: Props) {
           (gltf) => {
             console.log('Hand model loaded successfully');
             const model = gltf.scene;
-            model.scale.set(0.02, 0.02, 0.02); // Adjusted scale
-            model.position.set(0, 0, 0);
-            model.rotation.x = -Math.PI / 2;
+            model.scale.set(0.03, 0.03, 0.03); // Increased scale slightly
+            model.position.set(0, -1, 0); // Moved down to show wrist
+            model.rotation.set(-Math.PI / 2, 0, 0); // Adjusted rotation
 
             // Make model selectable and transparent
             model.traverse((child) => {
@@ -110,15 +110,16 @@ export default function ModelViewer({ onSave }: Props) {
             scene.add(model);
             modelRef.current = model;
 
-            // Adjust camera to focus on model
+            // Adjust camera to focus on model including wrist
             const box = new THREE.Box3().setFromObject(model);
             const center = box.getCenter(new THREE.Vector3());
             const size = box.getSize(new THREE.Vector3());
 
+            // Position camera to show full hand including wrist
             camera.position.set(
               center.x,
-              center.y + size.y * 2,
-              center.z + size.z * 3
+              center.y + size.y * 3,
+              center.z + size.z * 4
             );
             camera.lookAt(center);
             controls.target.copy(center);
@@ -142,7 +143,7 @@ export default function ModelViewer({ onSave }: Props) {
       // Main joint
       const joint = new THREE.Mesh(
         new THREE.SphereGeometry(0.8, 32, 32),
-        new THREE.MeshPhongMaterial({ 
+        new THREE.MeshPhongMaterial({
           color: 0xe0e0e0,
           transparent: true,
           opacity: 0.8
@@ -154,7 +155,7 @@ export default function ModelViewer({ onSave }: Props) {
       // Upper leg
       const upperLeg = new THREE.Mesh(
         new THREE.CylinderGeometry(0.4, 0.4, 2),
-        new THREE.MeshPhongMaterial({ 
+        new THREE.MeshPhongMaterial({
           color: 0xe0e0e0,
           transparent: true,
           opacity: 0.8
@@ -167,7 +168,7 @@ export default function ModelViewer({ onSave }: Props) {
       // Lower leg
       const lowerLeg = new THREE.Mesh(
         new THREE.CylinderGeometry(0.4, 0.4, 2),
-        new THREE.MeshPhongMaterial({ 
+        new THREE.MeshPhongMaterial({
           color: 0xe0e0e0,
           transparent: true,
           opacity: 0.8
