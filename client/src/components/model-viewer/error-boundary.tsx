@@ -10,26 +10,35 @@ interface State {
 }
 
 export class ThreeErrorBoundary extends Component<Props, State> {
-  constructor(props: Props) {
-    super(props);
-    this.state = { hasError: false, error: null };
+  public state: State = {
+    hasError: false,
+    error: null
+  };
+
+  public static getDerivedStateFromError(error: Error): State {
+    return {
+      hasError: true,
+      error
+    };
   }
 
-  static getDerivedStateFromError(error: Error) {
-    return { hasError: true, error };
-  }
-
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('Three.js Error:', error);
+  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('ThreeJS Error:', error);
     console.error('Error Info:', errorInfo);
   }
 
-  render() {
+  public render() {
     if (this.state.hasError) {
       return (
-        <div className="p-4 text-red-500">
-          <h2>Something went wrong with the 3D viewer.</h2>
-          <p className="text-sm">{this.state.error?.message}</p>
+        <div className="p-4 border-2 border-red-500 rounded-lg">
+          <h3 className="text-red-500 font-bold">3D Viewer Error</h3>
+          <p className="text-sm mt-2">{this.state.error?.message}</p>
+          <button 
+            className="mt-4 px-4 py-2 bg-red-100 text-red-600 rounded hover:bg-red-200"
+            onClick={() => this.setState({ hasError: false, error: null })}
+          >
+            Try Again
+          </button>
         </div>
       );
     }
