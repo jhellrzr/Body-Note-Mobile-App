@@ -1,6 +1,7 @@
 import { useRef, useEffect, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { Button } from '@/components/ui/button';
 import { Hand, MoveHorizontal } from 'lucide-react';
 
@@ -22,6 +23,7 @@ export default function ModelViewer({ onSave }: Props) {
   const controlsRef = useRef<OrbitControls | null>(null);
   const raycasterRef = useRef<THREE.Raycaster>(new THREE.Raycaster());
   const mouseRef = useRef<THREE.Vector2>(new THREE.Vector2());
+  const modelRef = useRef<THREE.Group | null>(null);
   const [mode, setMode] = useState<'view' | 'mark'>('view');
   const [modelType, setModelType] = useState<'hand' | 'knee'>('hand');
   const [painMarkers, setPainMarkers] = useState<PainMarker[]>([]);
@@ -40,7 +42,7 @@ export default function ModelViewer({ onSave }: Props) {
     camera.position.z = 5;
     cameraRef.current = camera;
 
-    // Initialize renderer with proper size
+    // Initialize renderer
     const renderer = new THREE.WebGLRenderer({ 
       antialias: true,
       alpha: true 
@@ -56,84 +58,34 @@ export default function ModelViewer({ onSave }: Props) {
     controls.dampingFactor = 0.05;
     controlsRef.current = controls;
 
-    // Create hand model
-    function createHandModel() {
-      const group = new THREE.Group();
-
-      // Palm
-      const palm = new THREE.Mesh(
-        new THREE.BoxGeometry(1, 1.5, 0.2),
-        new THREE.MeshPhongMaterial({ 
-          color: 0xe0e0e0,
-          transparent: true,
-          opacity: 0.8
-        })
-      );
-      palm.userData.isSelectable = true;
-      group.add(palm);
-
-      // Fingers
-      for (let i = 0; i < 5; i++) {
-        const finger = new THREE.Mesh(
-          new THREE.BoxGeometry(0.2, 0.7, 0.2),
-          new THREE.MeshPhongMaterial({ 
-            color: 0xe0e0e0,
-            transparent: true,
-            opacity: 0.8
-          })
-        );
-        finger.position.y = 1;
-        finger.position.x = (i - 2) * 0.22;
-        finger.userData.isSelectable = true;
-        group.add(finger);
+    // Load hand model
+    const gltfLoader = new GLTFLoader();
+    gltfLoader.load('/attached_assets/uploads_files_5594354_Jewelry+Hand+Holder.glb', (gltf) => {
+      if (modelRef.current) {
+        scene.remove(modelRef.current);
       }
+      const model = gltf.scene;
+      model.scale.set(2, 2, 2); // Adjust scale as needed
+      model.position.set(0, 0, 0);
+      model.traverse((child) => {
+        if (child instanceof THREE.Mesh) {
+          child.userData.isSelectable = true;
+          child.material.transparent = true;
+          child.material.opacity = 0.8;
+        }
+      });
+      scene.add(model);
+      modelRef.current = model;
+    });
 
-      return group;
-    }
-
-    // Create knee model
-    function createKneeModel() {
-      const group = new THREE.Group();
-
-      // Main joint
-      const joint = new THREE.Mesh(
-        new THREE.SphereGeometry(0.8, 32, 32),
-        new THREE.MeshPhongMaterial({ 
-          color: 0xe0e0e0,
-          transparent: true,
-          opacity: 0.8
-        })
-      );
-      joint.userData.isSelectable = true;
-      group.add(joint);
-
-      // Upper leg
-      const upperLeg = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.4, 0.4, 2),
-        new THREE.MeshPhongMaterial({ 
-          color: 0xe0e0e0,
-          transparent: true,
-          opacity: 0.8
-        })
-      );
-      upperLeg.position.y = 1.5;
-      upperLeg.userData.isSelectable = true;
-      group.add(upperLeg);
-
-      // Lower leg
-      const lowerLeg = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.4, 0.4, 2),
-        new THREE.MeshPhongMaterial({ 
-          color: 0xe0e0e0,
-          transparent: true,
-          opacity: 0.8
-        })
-      );
-      lowerLeg.position.y = -1.5;
-      lowerLeg.userData.isSelectable = true;
-      group.add(lowerLeg);
-
-      return group;
+    // Create pain marker
+    function createPainMarker(position: THREE.Vector3) {
+      const markerGeometry = new THREE.SphereGeometry(0.05);
+      const markerMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+      const marker = new THREE.Mesh(markerGeometry, markerMaterial);
+      marker.position.copy(position);
+      scene.add(marker);
+      return marker;
     }
 
     // Add lights
@@ -147,27 +99,6 @@ export default function ModelViewer({ onSave }: Props) {
     // Add grid helper
     const gridHelper = new THREE.GridHelper(10, 10);
     scene.add(gridHelper);
-
-    // Initial model
-    let currentModel = modelType === 'hand' ? createHandModel() : createKneeModel();
-    scene.add(currentModel);
-
-    // Create pain marker
-    function createPainMarker(position: THREE.Vector3) {
-      const markerGeometry = new THREE.SphereGeometry(0.05);
-      const markerMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-      const marker = new THREE.Mesh(markerGeometry, markerMaterial);
-      marker.position.copy(position);
-      scene.add(marker);
-      return marker;
-    }
-
-    // Handle model type changes
-    function updateModel() {
-      scene.remove(currentModel);
-      currentModel = modelType === 'hand' ? createHandModel() : createKneeModel();
-      scene.add(currentModel);
-    }
 
     // Handle window resize
     function handleResize() {
@@ -209,15 +140,17 @@ export default function ModelViewer({ onSave }: Props) {
     // Animation loop
     function animate() {
       requestAnimationFrame(animate);
-      if (controlsRef.current && mode === 'view') {
-        controlsRef.current.update();
+      if (controlsRef.current) {
+        if (mode === 'view') {
+          controlsRef.current.enabled = true;
+          controlsRef.current.update();
+        } else {
+          controlsRef.current.enabled = false;
+        }
       }
       renderer.render(scene, camera);
     }
     animate();
-
-    // Update model when type changes
-    updateModel();
 
     // Cleanup
     return () => {
@@ -231,25 +164,11 @@ export default function ModelViewer({ onSave }: Props) {
         container.removeChild(renderer.domElement);
       }
     };
-  }, [modelType, mode]);
+  }, [mode]);
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div className="flex space-x-2">
-          <Button
-            variant={modelType === 'hand' ? 'default' : 'outline'}
-            onClick={() => setModelType('hand')}
-          >
-            Hand
-          </Button>
-          <Button
-            variant={modelType === 'knee' ? 'default' : 'outline'}
-            onClick={() => setModelType('knee')}
-          >
-            Knee
-          </Button>
-        </div>
+      <div className="flex justify-end">
         <Button
           variant={mode === 'mark' ? 'default' : 'outline'}
           onClick={() => setMode(mode === 'view' ? 'mark' : 'view')}
