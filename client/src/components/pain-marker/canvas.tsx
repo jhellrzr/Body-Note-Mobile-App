@@ -31,7 +31,6 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
   const [markers, setMarkers] = useState<PainMarker[]>([]);
   const [currentMarker, setCurrentMarker] = useState<PainMarker | null>(null);
 
-  // Initialize canvas and load image
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -42,13 +41,10 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
     const img = new Image();
     img.src = image;
     img.onload = () => {
-      // Calculate dimensions maintaining aspect ratio
       const maxWidth = 800;
       const scale = Math.min(1, maxWidth / img.width);
       canvas.width = img.width * scale;
       canvas.height = img.height * scale;
-
-      // Draw initial image
       drawImage();
     };
   }, [image]);
@@ -58,20 +54,17 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
     const ctx = canvas?.getContext('2d');
     if (!canvas || !ctx) return;
 
-    // Clear and draw base image
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const img = new Image();
     img.src = image;
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-    // Draw all saved markers
     markers.forEach(marker => {
       if (marker.points.length < 2) return;
       drawLine(ctx, marker.points, marker.type, marker.intensity, marker.brushSize);
     });
 
-    // Draw current marker if exists
-    if (currentMarker && currentMarker.points.length > 1) {
+    if (currentMarker?.points.length && currentMarker.points.length > 1) {
       drawLine(ctx, currentMarker.points, currentMarker.type, currentMarker.intensity, currentMarker.brushSize);
     }
   };
@@ -100,7 +93,7 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
     ctx.globalAlpha = 1;
   };
 
-  const getCanvasPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const getPointerPosition = (e: React.TouchEvent | React.MouseEvent) => {
     const canvas = canvasRef.current;
     if (!canvas) return null;
 
@@ -108,14 +101,23 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
 
-    return {
-      x: (e.clientX - rect.left) * scaleX,
-      y: (e.clientY - rect.top) * scaleY
-    };
+    let x, y;
+    if ('touches' in e) {
+      // Touch event
+      x = (e.touches[0].clientX - rect.left) * scaleX;
+      y = (e.touches[0].clientY - rect.top) * scaleY;
+    } else {
+      // Mouse event
+      x = (e.clientX - rect.left) * scaleX;
+      y = (e.clientY - rect.top) * scaleY;
+    }
+
+    return { x, y };
   };
 
-  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const point = getCanvasPoint(e);
+  const startDrawing = (e: React.TouchEvent | React.MouseEvent) => {
+    e.preventDefault();
+    const point = getPointerPosition(e);
     if (!point) return;
 
     setIsDrawing(true);
@@ -127,10 +129,11 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
     });
   };
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const draw = (e: React.TouchEvent | React.MouseEvent) => {
+    e.preventDefault();
     if (!isDrawing || !currentMarker) return;
 
-    const point = getCanvasPoint(e);
+    const point = getPointerPosition(e);
     if (!point) return;
 
     setCurrentMarker(prev => {
@@ -143,7 +146,8 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
     drawImage();
   };
 
-  const handleMouseUp = () => {
+  const stopDrawing = (e: React.TouchEvent | React.MouseEvent) => {
+    e.preventDefault();
     if (!isDrawing || !currentMarker) return;
 
     if (currentMarker.points.length > 1) {
@@ -167,11 +171,15 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
     <div className="space-y-4">
       <canvas
         ref={canvasRef}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
-        className="w-full cursor-crosshair border rounded-lg"
+        onMouseDown={startDrawing}
+        onMouseMove={draw}
+        onMouseUp={stopDrawing}
+        onMouseLeave={stopDrawing}
+        onTouchStart={startDrawing}
+        onTouchMove={draw}
+        onTouchEnd={stopDrawing}
+        onTouchCancel={stopDrawing}
+        className="w-full cursor-crosshair border rounded-lg touch-none"
         style={{ aspectRatio: canvasRef.current ? canvasRef.current.width / canvasRef.current.height : 1 }}
       />
       <div className="flex justify-end space-x-2">
