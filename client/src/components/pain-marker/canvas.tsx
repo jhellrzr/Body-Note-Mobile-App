@@ -166,13 +166,34 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    // Create a temporary link
-    const link = document.createElement('a');
-    link.download = `pain-tracking-${new Date().toISOString().slice(0, 10)}.png`;
-    link.href = canvas.toDataURL('image/png');
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Generate filename with timestamp
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const filename = `pain-tracking-${timestamp}.png`;
+
+    // Get image data
+    const imageData = canvas.toDataURL('image/png');
+
+    // For mobile browsers, open image in new tab
+    const newTab = window.open();
+    if (newTab) {
+      newTab.document.write(`
+        <html>
+          <head>
+            <title>Save Image</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <style>
+              body { margin: 0; display: flex; flex-direction: column; align-items: center; }
+              img { max-width: 100%; height: auto; }
+              p { font-family: system-ui; text-align: center; padding: 1rem; }
+            </style>
+          </head>
+          <body>
+            <p>Press and hold the image to save it to your device</p>
+            <img src="${imageData}" alt="Pain tracking">
+          </body>
+        </html>
+      `);
+    }
   };
 
   useEffect(() => {
@@ -198,11 +219,10 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
         <Button variant="outline" onClick={handleClear}>
           Clear
         </Button>
-        <Button variant="outline" onClick={handleSaveToDevice}>
+        <Button onClick={handleSaveToDevice}>
           <Download className="mr-2 h-4 w-4" />
           Save to Device
         </Button>
-        <Button onClick={() => onSave(markers)}>Done</Button>
       </div>
     </div>
   );
