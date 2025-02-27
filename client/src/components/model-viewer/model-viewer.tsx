@@ -1,5 +1,5 @@
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
+import { OrbitControls, DirectionalLight } from '@react-three/drei';
 import { useState, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import CubeTest from './cube-test';
@@ -36,31 +36,18 @@ export default function ModelViewer({ onSave }: Props) {
         </Button>
       </div>
 
-      <div className="relative w-full aspect-square border rounded-lg overflow-hidden">
-        <Suspense fallback={<Loader />}>
-          <Canvas
-            camera={{ position: [5, 5, 5], fov: 45 }}
-            style={{ background: '#f5f5f5' }}
-            onError={(error) => {
-              console.error('Three.js Error:', error);
-            }}
-          >
-            <ambientLight intensity={0.7} />
-            <pointLight position={[10, 10, 10]} intensity={1} />
-            <pointLight position={[-10, -10, -10]} intensity={0.5} />
-
-            {/* Temporarily render CubeTest instead of HandModel/KneeModel */}
-            <CubeTest />
-
-            <OrbitControls 
-              enablePan={true}
-              enableZoom={true}
-              enableRotate={true}
-              minDistance={3}
-              maxDistance={10}
-            />
-          </Canvas>
-        </Suspense>
+      <div className="relative w-full aspect-square border rounded-lg overflow-hidden bg-gray-100">
+        <Canvas
+          camera={{ position: [3, 3, 3], fov: 75 }}
+          onCreated={({ gl }) => {
+            gl.setClearColor('#f5f5f5');
+          }}
+        >
+          <ambientLight intensity={0.5} />
+          <directionalLight position={[2, 2, 2]} />
+          <CubeTest />
+          <OrbitControls />
+        </Canvas>
       </div>
     </div>
   );
