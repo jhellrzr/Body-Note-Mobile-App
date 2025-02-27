@@ -9,7 +9,6 @@ interface Props {
 function Scene() {
   return (
     <>
-      <ambientLight />
       <mesh>
         <boxGeometry args={[1, 1, 1]} />
         <meshStandardMaterial color="orange" />
@@ -36,10 +35,6 @@ export default function ModelViewer({ onSave }: Props) {
               antialias: true,
               powerPreference: "default",
               failIfMajorPerformanceCaveat: false
-            }}
-            camera={{
-              position: [0, 0, 3],
-              fov: 75
             }}
           >
             <Scene />
