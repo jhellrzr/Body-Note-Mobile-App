@@ -5,8 +5,7 @@ import { painTypes } from "@shared/schema";
 interface PainMarker {
   type: keyof typeof painTypes;
   intensity: number;
-  x: number;
-  y: number;
+  points: { x: number; y: number }[];
 }
 
 interface Props {
@@ -20,6 +19,8 @@ export default function PainMarkerCanvas({ image, color, intensity, onSave }: Pr
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [markers, setMarkers] = useState<PainMarker[]>([]);
   const [imageSize, setImageSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [currentPath, setCurrentPath] = useState<{ x: number; y: number }[]>([]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -50,35 +51,93 @@ export default function PainMarkerCanvas({ image, color, intensity, onSave }: Pr
   }, [image, markers]);
 
   const drawPainMarker = (ctx: CanvasRenderingContext2D, marker: PainMarker) => {
+    if (marker.points.length < 2) return;
+
     ctx.beginPath();
-    ctx.arc(marker.x, marker.y, 10 + marker.intensity * 2, 0, Math.PI * 2);
+    ctx.moveTo(marker.points[0].x, marker.points[0].y);
 
     // Calculate color opacity based on intensity (20% to 100%)
     const baseColor = marker.type.toLowerCase();
     const alpha = 0.2 + (marker.intensity * 0.16); // Maps 1-5 to 0.36-1.0
-    ctx.fillStyle = `${baseColor}${Math.round(alpha * 255).toString(16).padStart(2, '0')}`;
-    ctx.fill();
+    ctx.strokeStyle = `${baseColor}${Math.round(alpha * 255).toString(16).padStart(2, '0')}`;
+    ctx.lineWidth = 4 + marker.intensity * 2; // Line width increases with intensity
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    // Draw smooth line through points
+    for (let i = 1; i < marker.points.length; i++) {
+      const p1 = marker.points[i - 1];
+      const p2 = marker.points[i];
+      ctx.lineTo(p2.x, p2.y);
+    }
+    ctx.stroke();
   };
 
-  const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const getCanvasPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) return null;
 
     const rect = canvas.getBoundingClientRect();
-    const scaleX = imageSize.width / rect.width;
-    const scaleY = imageSize.height / rect.height;
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
 
-    const x = (e.clientX - rect.left) * scaleX;
-    const y = (e.clientY - rect.top) * scaleY;
+    return {
+      x: (e.clientX - rect.left) * scaleX,
+      y: (e.clientY - rect.top) * scaleY
+    };
+  };
 
-    const newMarker: PainMarker = {
+  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const point = getCanvasPoint(e);
+    if (!point) return;
+
+    setIsDrawing(true);
+    setCurrentPath([point]);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!isDrawing) return;
+
+    const point = getCanvasPoint(e);
+    if (!point) return;
+
+    setCurrentPath(prev => [...prev, point]);
+
+    // Draw the current stroke
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext("2d");
+    if (!canvas || !ctx) return;
+
+    const marker: PainMarker = {
       type: color as keyof typeof painTypes,
       intensity,
-      x,
-      y
+      points: [...currentPath, point]
     };
 
-    setMarkers(prev => [...prev, newMarker]);
+    // Clear and redraw everything
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const img = new Image();
+    img.src = image;
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+    // Draw all completed markers
+    markers.forEach(m => drawPainMarker(ctx, m));
+
+    // Draw current marker
+    drawPainMarker(ctx, marker);
+  };
+
+  const handleMouseUp = () => {
+    if (!isDrawing || currentPath.length < 2) return;
+
+    setMarkers(prev => [...prev, {
+      type: color as keyof typeof painTypes,
+      intensity,
+      points: currentPath
+    }]);
+
+    setIsDrawing(false);
+    setCurrentPath([]);
   };
 
   const handleClear = () => {
@@ -100,7 +159,10 @@ export default function PainMarkerCanvas({ image, color, intensity, onSave }: Pr
     <div className="space-y-4">
       <canvas
         ref={canvasRef}
-        onClick={handleCanvasClick}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
         className="w-full cursor-crosshair border rounded-lg"
         style={{ aspectRatio: imageSize.width / imageSize.height }}
       />

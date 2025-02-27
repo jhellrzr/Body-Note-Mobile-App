@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, timestamp, json } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, json } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -17,8 +17,7 @@ export const painEntries = pgTable("pain_entries", {
   painMarkers: json("pain_markers").$type<{
     type: keyof typeof painTypes;
     intensity: number;
-    x: number;
-    y: number;
+    points: { x: number; y: number }[];
   }[]>().notNull(),
   notes: text("notes")
 });
