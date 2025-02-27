@@ -4,6 +4,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { Hand } from 'lucide-react';
 
 interface Props {
@@ -40,7 +41,7 @@ export default function ModelViewer({ onSave }: Props) {
     scene.background = new THREE.Color(0xf0f0f0);
     sceneRef.current = scene;
 
-    // Initialize camera based on container size
+    // Initialize camera
     const container = containerRef.current;
     const aspect = container.clientWidth / container.clientHeight;
     const camera = new THREE.PerspectiveCamera(75, aspect, 0.1, 1000);
@@ -66,6 +67,15 @@ export default function ModelViewer({ onSave }: Props) {
     controls.maxDistance = 10;
     controlsRef.current = controls;
 
+    // Add lights
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    scene.add(ambientLight);
+
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(5, 5, 5);
+    directionalLight.castShadow = true;
+    scene.add(directionalLight);
+
     // Load models based on type
     function loadModel() {
       if (modelRef.current) {
@@ -76,13 +86,13 @@ export default function ModelViewer({ onSave }: Props) {
         console.log('Loading hand model...');
         const loader = new GLTFLoader();
         loader.load(
-          '/attached_assets/uploads_files_5594354_Jewelry+Hand+Holder.glb',
+          'attached_assets/uploads_files_5594354_Jewelry+Hand+Holder.glb',
           (gltf) => {
             console.log('Hand model loaded successfully');
             const model = gltf.scene;
-            model.scale.set(0.5, 0.5, 0.5); // Reduced scale
+            model.scale.set(0.5, 0.5, 0.5);
             model.position.set(0, 0, 0);
-            model.rotation.x = -Math.PI / 2; // Rotate to face up
+            model.rotation.x = -Math.PI / 2;
             model.traverse((child) => {
               if (child instanceof THREE.Mesh) {
                 child.userData.isSelectable = true;
@@ -102,7 +112,7 @@ export default function ModelViewer({ onSave }: Props) {
           },
           (error) => {
             console.error('Error loading GLB:', error);
-            createKneeModel(); // Fallback to basic knee model if GLB fails
+            createKneeModel();
           }
         );
       } else {
@@ -154,15 +164,6 @@ export default function ModelViewer({ onSave }: Props) {
       scene.add(group);
       modelRef.current = group;
     }
-
-    // Add lights
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-    scene.add(ambientLight);
-
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-    directionalLight.position.set(5, 5, 5);
-    directionalLight.castShadow = true;
-    scene.add(directionalLight);
 
     // Handle window resize
     function handleResize() {
