@@ -31,9 +31,9 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize }:
   const [isDrawing, setIsDrawing] = useState(false);
   const [markers, setMarkers] = useState<PainMarker[]>([]);
   const [currentMarker, setCurrentMarker] = useState<PainMarker | null>(null);
-  const [selectedColor, setSelectedColor] = useState<string>(color); // Added state for color selector
-  const [selectedIntensity, setIntensity] = useState<number>(intensity); // Added state for intensity selector
-  const [selectedBrushSize, setBrushSize] = useState<number>(brushSize); // Added state for brush size selector
+  const [selectedColor, setSelectedColor] = useState<string>(color);
+  const [selectedIntensity, setIntensity] = useState<number>(intensity);
+  const [selectedBrushSize, setBrushSize] = useState<number>(brushSize);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -125,10 +125,10 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize }:
 
     setIsDrawing(true);
     setCurrentMarker({
-      type: selectedColor as keyof typeof painTypes, // Use selectedColor
-      intensity: selectedIntensity, // Use selectedIntensity
+      type: selectedColor as keyof typeof painTypes,
+      intensity: selectedIntensity,
       points: [point],
-      brushSize: selectedBrushSize // Use selectedBrushSize
+      brushSize: selectedBrushSize
     });
   };
 
@@ -271,31 +271,7 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize }:
 
   useEffect(() => {
     drawImage();
-  }, [markers, selectedColor, selectedIntensity, selectedBrushSize]); // Use selected states
-
-
-  // Placeholder components - replace with your actual components
-  const ColorSelector = ({value, onChange}: {value:string, onChange:(value:string)=>void}) => (
-    <div>
-      {/* Your color selector implementation here */}
-      <p>Color: {value}</p> {/*Example*/}
-    </div>
-  );
-
-  const IntensitySelector = ({value, onChange}: {value:number, onChange:(value:number)=>void}) => (
-    <div>
-      {/* Your intensity selector implementation here */}
-      <p>Intensity: {value}</p> {/*Example*/}
-    </div>
-  );
-
-  const BrushSizeSelector = ({value, onChange}: {value:number, onChange:(value:number)=>void}) => (
-    <div>
-      {/* Your brush size selector implementation here */}
-      <p>Brush Size: {value}</p> {/*Example*/}
-    </div>
-  );
-
+  }, [markers, selectedColor, selectedIntensity, selectedBrushSize]);
 
   return (
     <div className="space-y-6">
@@ -316,12 +292,7 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize }:
       </div>
 
       <div className="space-y-6 bg-gray-50 p-4 rounded-lg">
-        <ColorSelector value={selectedColor} onChange={setSelectedColor} />
-
-        <div className="space-y-6 pt-2">
-          <IntensitySelector value={selectedIntensity} onChange={setIntensity} />
-          <BrushSizeSelector value={selectedBrushSize} onChange={setBrushSize} />
-        </div>
+        {/*Removed placeholder components*/}
       </div>
 
       <div className="flex justify-end space-x-2">
