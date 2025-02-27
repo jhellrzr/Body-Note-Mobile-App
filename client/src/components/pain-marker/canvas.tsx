@@ -29,61 +29,60 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [markers, setMarkers] = useState<PainMarker[]>([]);
-  const [currentPath, setCurrentPath] = useState<{ x: number; y: number }[]>([]);
+  const [currentMarker, setCurrentMarker] = useState<PainMarker | null>(null);
 
-  // Initialize canvas with image
+  // Initialize canvas and load image
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
     const img = new Image();
     img.src = image;
     img.onload = () => {
+      // Calculate dimensions maintaining aspect ratio
       const maxWidth = 800;
       const scale = Math.min(1, maxWidth / img.width);
-      const width = img.width * scale;
-      const height = img.height * scale;
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
 
-      canvas.width = width;
-      canvas.height = height;
-      drawAll();
+      // Draw initial image
+      drawImage();
     };
   }, [image]);
 
-  // Draw everything on canvas
-  const drawAll = () => {
+  const drawImage = () => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
     if (!canvas || !ctx) return;
 
-    // Clear canvas
+    // Clear and draw base image
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Draw base image
     const img = new Image();
     img.src = image;
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-    // Draw all completed markers
+    // Draw all saved markers
     markers.forEach(marker => {
-      drawPath(ctx, marker.points, marker.type, marker.intensity, marker.brushSize);
+      if (marker.points.length < 2) return;
+      drawLine(ctx, marker.points, marker.type, marker.intensity, marker.brushSize);
     });
 
-    // Draw current path if exists
-    if (currentPath.length > 0) {
-      drawPath(ctx, currentPath, color, intensity, brushSize);
+    // Draw current marker if exists
+    if (currentMarker && currentMarker.points.length > 1) {
+      drawLine(ctx, currentMarker.points, currentMarker.type, currentMarker.intensity, currentMarker.brushSize);
     }
   };
 
-  const drawPath = (
-    ctx: CanvasRenderingContext2D, 
-    points: { x: number; y: number }[], 
-    color: string, 
-    intensity: number, 
+  const drawLine = (
+    ctx: CanvasRenderingContext2D,
+    points: { x: number; y: number }[],
+    color: string,
+    intensity: number,
     size: number
   ) => {
-    if (points.length < 2) return;
-
     ctx.beginPath();
     ctx.moveTo(points[0].x, points[0].y);
 
@@ -96,11 +95,12 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
     for (let i = 1; i < points.length; i++) {
       ctx.lineTo(points[i].x, points[i].y);
     }
+
     ctx.stroke();
     ctx.globalAlpha = 1;
   };
 
-  const getMousePos = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const getCanvasPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return null;
 
@@ -115,46 +115,52 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
   };
 
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const point = getMousePos(e);
+    const point = getCanvasPoint(e);
     if (!point) return;
 
     setIsDrawing(true);
-    setCurrentPath([point]);
+    setCurrentMarker({
+      type: color as keyof typeof painTypes,
+      intensity,
+      points: [point],
+      brushSize
+    });
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDrawing) return;
+    if (!isDrawing || !currentMarker) return;
 
-    const point = getMousePos(e);
+    const point = getCanvasPoint(e);
     if (!point) return;
 
-    setCurrentPath(prev => [...prev, point]);
-    drawAll();
+    setCurrentMarker(prev => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        points: [...prev.points, point]
+      };
+    });
+    drawImage();
   };
 
   const handleMouseUp = () => {
-    if (!isDrawing || currentPath.length < 2) return;
+    if (!isDrawing || !currentMarker) return;
 
-    setMarkers(prev => [...prev, {
-      type: color as keyof typeof painTypes,
-      intensity,
-      points: currentPath,
-      brushSize
-    }]);
+    if (currentMarker.points.length > 1) {
+      setMarkers(prev => [...prev, currentMarker]);
+    }
 
     setIsDrawing(false);
-    setCurrentPath([]);
+    setCurrentMarker(null);
   };
 
   const handleClear = () => {
     setMarkers([]);
-    setCurrentPath([]);
-    drawAll();
+    drawImage();
   };
 
-  // Redraw when dependencies change
   useEffect(() => {
-    drawAll();
+    drawImage();
   }, [markers, color, intensity, brushSize]);
 
   return (
@@ -166,8 +172,7 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
         className="w-full cursor-crosshair border rounded-lg"
-        style={{ aspectRatio: canvasRef.current?.width && canvasRef.current?.height ? 
-          canvasRef.current.width / canvasRef.current.height : 1 }}
+        style={{ aspectRatio: canvasRef.current ? canvasRef.current.width / canvasRef.current.height : 1 }}
       />
       <div className="flex justify-end space-x-2">
         <Button variant="outline" onClick={handleClear}>
