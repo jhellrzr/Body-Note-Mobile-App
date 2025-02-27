@@ -1,4 +1,3 @@
-
 import { useRef, useEffect, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
@@ -7,6 +6,8 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Hand, Loader } from 'lucide-react';
+import ColorSelector from "@/components/pain-marker/color-selector";
+import IntensitySelector from "@/components/pain-marker/intensity-selector";
 
 interface Props {
   onSave: (painMarkers: PainMarker[]) => void;
@@ -20,7 +21,7 @@ interface PainMarker {
   intensity: number;
 }
 
-export default function ModelViewer({ onSave, selectedColor, intensity }: Props) {
+export default function ModelViewer({ onSave, selectedColor: initialColor, intensity: initialIntensity }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -35,6 +36,8 @@ export default function ModelViewer({ onSave, selectedColor, intensity }: Props)
   const [painMarkers, setPainMarkers] = useState<PainMarker[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
+  const [selectedColor, setSelectedColor] = useState(initialColor);
+  const [intensity, setIntensity] = useState(initialIntensity);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -462,6 +465,13 @@ export default function ModelViewer({ onSave, selectedColor, intensity }: Props)
         </div>
       </div>
 
+      {mode === 'mark' && (
+        <div className="bg-gray-50 p-4 rounded-lg space-y-4">
+          <ColorSelector value={selectedColor} onChange={setSelectedColor} />
+          <IntensitySelector value={intensity} onChange={setIntensity} color={selectedColor} />
+        </div>
+      )}
+
       <div className="relative w-full aspect-square border rounded-lg overflow-hidden bg-gray-100">
         {isLoading && (
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-100 bg-opacity-80 z-10">
@@ -471,10 +481,13 @@ export default function ModelViewer({ onSave, selectedColor, intensity }: Props)
         )}
         <div ref={containerRef} className="w-full h-full touch-none" />
       </div>
-      
+
       {mode === 'mark' && painMarkers.length > 0 && (
         <div className="flex justify-end">
-          <Button onClick={handleSave}>
+          <Button onClick={() => {
+            onSave(painMarkers);
+            setPainMarkers([]);
+          }}>
             Save Pain Points
           </Button>
         </div>
