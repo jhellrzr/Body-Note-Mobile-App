@@ -151,7 +151,7 @@ export default function Home() {
               <ModelViewer
                 onSave={(markers) =>
                   mutation.mutate({
-                    imageUrl: "", 
+                    imageUrl: "",
                     painMarkers: markers,
                     notes: "",
                   })
