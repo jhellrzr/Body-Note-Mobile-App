@@ -156,10 +156,14 @@ export default function Home() {
                     notes: "",
                   })
                 }
+                selectedColor={selectedColor}
+                intensity={intensity}
               />
-              <ColorSelector value={selectedColor} onChange={setSelectedColor} />
-              <IntensitySelector value={intensity} onChange={setIntensity} />
-              <BrushSizeSelector value={brushSize} onChange={setBrushSize} />
+              <div className="mt-4 space-y-4">
+                <ColorSelector value={selectedColor} onChange={setSelectedColor} />
+                <IntensitySelector value={intensity} onChange={setIntensity} />
+                <BrushSizeSelector value={brushSize} onChange={setBrushSize} />
+              </div>
               <div className="flex justify-end">
                 <Button variant="outline" onClick={() => setMode('upload')}>
                   Back

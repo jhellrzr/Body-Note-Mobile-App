@@ -1,3 +1,4 @@
+
 import { useRef, useEffect, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
@@ -5,19 +6,21 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Hand } from 'lucide-react';
+import { Hand, Loader } from 'lucide-react';
 
 interface Props {
-  onSave: (painMarkers: any[]) => void;
+  onSave: (painMarkers: PainMarker[]) => void;
+  selectedColor: string;
+  intensity: number;
 }
 
 interface PainMarker {
-  position: THREE.Vector3;
+  position: { x: number; y: number; z: number };
   color: string;
   intensity: number;
 }
 
-export default function ModelViewer({ onSave }: Props) {
+export default function ModelViewer({ onSave, selectedColor, intensity }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -27,11 +30,11 @@ export default function ModelViewer({ onSave }: Props) {
   const mouseRef = useRef<THREE.Vector2>(new THREE.Vector2());
   const modelRef = useRef<THREE.Group | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [currentLine, setCurrentLine] = useState<THREE.Line | null>(null);
-  const [currentPoints, setCurrentPoints] = useState<THREE.Vector3[]>([]);
   const [mode, setMode] = useState<'view' | 'mark'>('view');
   const [modelType, setModelType] = useState<'hand' | 'knee'>('hand');
   const [painMarkers, setPainMarkers] = useState<PainMarker[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -49,138 +52,38 @@ export default function ModelViewer({ onSave }: Props) {
     cameraRef.current = camera;
 
     // Initialize renderer
-    const renderer = new THREE.WebGLRenderer({
-      antialias: true,
-      alpha: true
-    });
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.shadowMap.enabled = true;
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // Initialize orbit controls
+    // Initialize controls
     const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-    controls.minDistance = 2;
-    controls.maxDistance = 10;
+    controls.target.set(0, 0, 0);
+    controls.update();
     controlsRef.current = controls;
 
-    // Add lights
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    // Setup lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     scene.add(ambientLight);
-
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-    directionalLight.position.set(5, 5, 5);
-    directionalLight.castShadow = true;
+    
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(2, 4, 3);
     scene.add(directionalLight);
 
-    // Load models based on type
-    function loadModel() {
-      if (modelRef.current) {
-        scene.remove(modelRef.current);
-      }
+    // Load appropriate model
+    loadModel(modelType);
 
-      if (modelType === 'hand') {
-        console.log('Loading hand model...');
-        const loader = new GLTFLoader();
-        loader.load(
-          './attached_assets/uploads_files_5594354_Jewelry+Hand+Holder.glb',
-          (gltf) => {
-            console.log('Hand model loaded successfully');
-            const model = gltf.scene;
-            model.scale.set(0.03, 0.03, 0.03); // Increased scale slightly
-            model.position.set(0, -1, 0); // Moved down to show wrist
-            model.rotation.set(-Math.PI / 2, 0, 0); // Adjusted rotation
-
-            // Make model selectable and transparent
-            model.traverse((child) => {
-              if (child instanceof THREE.Mesh) {
-                child.userData.isSelectable = true;
-                child.castShadow = true;
-                child.receiveShadow = true;
-                if (child.material) {
-                  child.material.transparent = true;
-                  child.material.opacity = 0.9;
-                }
-              }
-            });
-
-            scene.add(model);
-            modelRef.current = model;
-
-            // Adjust camera to focus on model including wrist
-            const box = new THREE.Box3().setFromObject(model);
-            const center = box.getCenter(new THREE.Vector3());
-            const size = box.getSize(new THREE.Vector3());
-
-            // Position camera to show full hand including wrist
-            camera.position.set(
-              center.x,
-              center.y + size.y * 3,
-              center.z + size.z * 4
-            );
-            camera.lookAt(center);
-            controls.target.copy(center);
-          },
-          (progress) => {
-            console.log('Loading progress:', (progress.loaded / progress.total * 100) + '%');
-          },
-          (error) => {
-            console.error('Error loading GLB:', error);
-            createKneeModel();
-          }
-        );
-      } else {
-        createKneeModel();
+    // Animation loop
+    function animate() {
+      requestAnimationFrame(animate);
+      if (controlsRef.current) controlsRef.current.update();
+      if (rendererRef.current && cameraRef.current && sceneRef.current) {
+        rendererRef.current.render(sceneRef.current, cameraRef.current);
       }
     }
-
-    function createKneeModel() {
-      const group = new THREE.Group();
-
-      // Main joint
-      const joint = new THREE.Mesh(
-        new THREE.SphereGeometry(0.8, 32, 32),
-        new THREE.MeshPhongMaterial({
-          color: 0xe0e0e0,
-          transparent: true,
-          opacity: 0.8
-        })
-      );
-      joint.userData.isSelectable = true;
-      group.add(joint);
-
-      // Upper leg
-      const upperLeg = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.4, 0.4, 2),
-        new THREE.MeshPhongMaterial({
-          color: 0xe0e0e0,
-          transparent: true,
-          opacity: 0.8
-        })
-      );
-      upperLeg.position.y = 1.5;
-      upperLeg.userData.isSelectable = true;
-      group.add(upperLeg);
-
-      // Lower leg
-      const lowerLeg = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.4, 0.4, 2),
-        new THREE.MeshPhongMaterial({
-          color: 0xe0e0e0,
-          transparent: true,
-          opacity: 0.8
-        })
-      );
-      lowerLeg.position.y = -1.5;
-      lowerLeg.userData.isSelectable = true;
-      group.add(lowerLeg);
-
-      scene.add(group);
-      modelRef.current = group;
-    }
+    animate();
 
     // Handle window resize
     function handleResize() {
@@ -193,118 +96,341 @@ export default function ModelViewer({ onSave }: Props) {
     }
     window.addEventListener('resize', handleResize);
 
-    // Handle mouse/touch events for pain marking
-    function handlePointerDown(event: MouseEvent | TouchEvent) {
-      if (mode !== 'mark') return;
-      setIsDrawing(true);
-      const point = getIntersectionPoint(event);
-      if (point) {
-        setCurrentPoints([point]);
-        const geometry = new THREE.BufferGeometry().setFromPoints([point, point]);
-        const material = new THREE.LineBasicMaterial({ color: 0xff0000 });
-        const line = new THREE.Line(geometry, material);
-        scene.add(line);
-        setCurrentLine(line);
-      }
-    }
+    // Handle mouse/touch events
+    container.addEventListener('pointerdown', handlePointerDown);
+    container.addEventListener('pointermove', handlePointerMove);
+    container.addEventListener('pointerup', handlePointerUp);
 
-    function handlePointerMove(event: MouseEvent | TouchEvent) {
-      if (!isDrawing || mode !== 'mark') return;
-      const point = getIntersectionPoint(event);
-      if (point && currentLine) {
-        const points = [...currentPoints, point];
-        setCurrentPoints(points);
-        const geometry = new THREE.BufferGeometry().setFromPoints(points);
-        currentLine.geometry.dispose();
-        currentLine.geometry = geometry;
-      }
-    }
-
-    function handlePointerUp() {
-      if (!isDrawing || mode !== 'mark') return;
-      setIsDrawing(false);
-      if (currentPoints.length > 1) {
-        setPainMarkers(prev => [...prev, {
-          position: currentPoints[0],
-          color: '#ff0000',
-          intensity: 1
-        }]);
-      }
-      setCurrentPoints([]);
-      setCurrentLine(null);
-    }
-
-    function getIntersectionPoint(event: MouseEvent | TouchEvent): THREE.Vector3 | null {
-      const rect = container.getBoundingClientRect();
-      let clientX: number, clientY: number;
-
-      if (event instanceof TouchEvent) {
-        clientX = event.touches[0].clientX;
-        clientY = event.touches[0].clientY;
-      } else {
-        clientX = event.clientX;
-        clientY = event.clientY;
-      }
-
-      mouseRef.current.x = ((clientX - rect.left) / container.clientWidth) * 2 - 1;
-      mouseRef.current.y = -((clientY - rect.top) / container.clientHeight) * 2 + 1;
-
-      raycasterRef.current.setFromCamera(mouseRef.current, camera);
-      const intersects = raycasterRef.current.intersectObjects(scene.children, true);
-
-      for (const intersect of intersects) {
-        if (intersect.object.userData.isSelectable) {
-          return intersect.point;
-        }
-      }
-      return null;
-    }
-
-    container.addEventListener('mousedown', handlePointerDown);
-    container.addEventListener('mousemove', handlePointerMove);
-    container.addEventListener('mouseup', handlePointerUp);
-    container.addEventListener('mouseleave', handlePointerUp);
-    container.addEventListener('touchstart', handlePointerDown);
-    container.addEventListener('touchmove', handlePointerMove);
-    container.addEventListener('touchend', handlePointerUp);
-    container.addEventListener('touchcancel', handlePointerUp);
-
-    // Animation loop
-    function animate() {
-      requestAnimationFrame(animate);
-      if (controlsRef.current) {
-        controlsRef.current.enabled = mode === 'view';
-        if (mode === 'view') {
-          controlsRef.current.update();
-        }
-      }
-      renderer.render(scene, camera);
-    }
-    animate();
-
-    // Load initial model
-    loadModel();
-
-    // Cleanup
     return () => {
+      if (rendererRef.current && rendererRef.current.domElement && container) {
+        container.removeChild(rendererRef.current.domElement);
+      }
       window.removeEventListener('resize', handleResize);
-      container.removeEventListener('mousedown', handlePointerDown);
-      container.removeEventListener('mousemove', handlePointerMove);
-      container.removeEventListener('mouseup', handlePointerUp);
-      container.removeEventListener('mouseleave', handlePointerUp);
-      container.removeEventListener('touchstart', handlePointerDown);
-      container.removeEventListener('touchmove', handlePointerMove);
-      container.removeEventListener('touchend', handlePointerUp);
-      container.removeEventListener('touchcancel', handlePointerUp);
-      if (controlsRef.current) {
-        controlsRef.current.dispose();
-      }
-      renderer.dispose();
-      if (container && renderer.domElement) {
-        container.removeChild(renderer.domElement);
-      }
+      container.removeEventListener('pointerdown', handlePointerDown);
+      container.removeEventListener('pointermove', handlePointerMove);
+      container.removeEventListener('pointerup', handlePointerUp);
     };
-  }, [modelType, mode, isDrawing, currentPoints, currentLine]);
+  }, [modelType]);
+
+  // Function to load 3D model
+  function loadModel(type: 'hand' | 'knee') {
+    if (!sceneRef.current) return;
+    const scene = sceneRef.current;
+    
+    // Remove existing model
+    if (modelRef.current) {
+      scene.remove(modelRef.current);
+      modelRef.current = null;
+    }
+
+    // Create group for model
+    const group = new THREE.Group();
+    
+    if (type === 'hand') {
+      setIsLoading(true);
+      console.log("Loading hand model...");
+      
+      // Create loader with progress tracking
+      const loader = new GLTFLoader();
+      loader.load(
+        '/models/hand.glb', // Path to your model
+        (gltf) => {
+          const model = gltf.scene;
+          model.scale.set(2, 2, 2);
+          model.position.set(0, 0, 0);
+          model.rotation.set(0, 0, 0);
+          
+          // Make model selectable for pain marking
+          model.traverse((child) => {
+            if (child instanceof THREE.Mesh) {
+              child.userData.isSelectable = true;
+              
+              // Update material for better visualization
+              if (child.material) {
+                child.material = new THREE.MeshPhongMaterial({
+                  color: 0xe0e0e0,
+                  transparent: true,
+                  opacity: 0.9,
+                });
+              }
+            }
+          });
+          
+          group.add(model);
+          scene.add(group);
+          modelRef.current = group;
+          setIsLoading(false);
+          setLoadingProgress(100);
+        },
+        (xhr) => {
+          setLoadingProgress((xhr.loaded / xhr.total) * 100);
+          console.log("Loading progress:", ((xhr.loaded / xhr.total) * 100) + "%");
+        },
+        (error) => {
+          console.error('Error loading hand model:', error);
+          setIsLoading(false);
+          // Fallback to primitive shape if model fails to load
+          createFallbackHandModel(group, scene);
+        }
+      );
+    } else if (type === 'knee') {
+      setIsLoading(true);
+      
+      // Create loader
+      const loader = new GLTFLoader();
+      loader.load(
+        '/models/knee.glb', // Path to your model
+        (gltf) => {
+          const model = gltf.scene;
+          model.scale.set(2, 2, 2);
+          model.position.set(0, 0, 0);
+          
+          // Make model selectable for pain marking
+          model.traverse((child) => {
+            if (child instanceof THREE.Mesh) {
+              child.userData.isSelectable = true;
+              
+              if (child.material) {
+                child.material = new THREE.MeshPhongMaterial({
+                  color: 0xe0e0e0,
+                  transparent: true,
+                  opacity: 0.9,
+                });
+              }
+            }
+          });
+          
+          group.add(model);
+          scene.add(group);
+          modelRef.current = group;
+          setIsLoading(false);
+          setLoadingProgress(100);
+        },
+        (xhr) => {
+          setLoadingProgress((xhr.loaded / xhr.total) * 100);
+        },
+        (error) => {
+          console.error('Error loading knee model:', error);
+          setIsLoading(false);
+          // Fallback to primitive shape if model fails to load
+          createFallbackKneeModel(group, scene);
+        }
+      );
+    }
+  }
+
+  // Fallback models in case GLB loading fails
+  function createFallbackHandModel(group: THREE.Group, scene: THREE.Scene) {
+    // Create a simple hand representation using primitive shapes
+    // Palm
+    const palm = new THREE.Mesh(
+      new THREE.BoxGeometry(1.2, 0.6, 0.2),
+      new THREE.MeshPhongMaterial({
+        color: 0xe0e0e0,
+        transparent: true,
+        opacity: 0.9
+      })
+    );
+    palm.userData.isSelectable = true;
+    group.add(palm);
+    
+    // Fingers
+    for (let i = 0; i < 5; i++) {
+      const finger = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.1, 0.1, 0.8),
+        new THREE.MeshPhongMaterial({
+          color: 0xe0e0e0,
+          transparent: true,
+          opacity: 0.9
+        })
+      );
+      finger.position.x = -0.5 + (i * 0.25);
+      finger.position.y = 0.7;
+      finger.rotation.x = Math.PI / 2;
+      finger.userData.isSelectable = true;
+      group.add(finger);
+    }
+    
+    scene.add(group);
+    modelRef.current = group;
+  }
+  
+  function createFallbackKneeModel(group: THREE.Group, scene: THREE.Scene) {
+    // Upper leg
+    const upperLeg = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.5, 0.5, 2),
+      new THREE.MeshPhongMaterial({
+        color: 0xe0e0e0,
+        transparent: true,
+        opacity: 0.9
+      })
+    );
+    upperLeg.position.y = 1.5;
+    upperLeg.userData.isSelectable = true;
+    group.add(upperLeg);
+    
+    // Knee joint
+    const knee = new THREE.Mesh(
+      new THREE.SphereGeometry(0.6),
+      new THREE.MeshPhongMaterial({
+        color: 0xe0e0e0,
+        transparent: true,
+        opacity: 0.9
+      })
+    );
+    knee.userData.isSelectable = true;
+    group.add(knee);
+    
+    // Lower leg
+    const lowerLeg = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.4, 0.4, 2),
+      new THREE.MeshPhongMaterial({
+        color: 0xe0e0e0,
+        transparent: true,
+        opacity: 0.9
+      })
+    );
+    lowerLeg.position.y = -1.5;
+    lowerLeg.userData.isSelectable = true;
+    group.add(lowerLeg);
+
+    scene.add(group);
+    modelRef.current = group;
+  }
+
+  // Convert normalized device coordinates to screen coordinates
+  function getPointerPosition(event: MouseEvent | TouchEvent) {
+    const container = containerRef.current;
+    if (!container) return { x: 0, y: 0 };
+    
+    const rect = container.getBoundingClientRect();
+    let clientX, clientY;
+    
+    if ('touches' in event) {
+      clientX = event.touches[0].clientX;
+      clientY = event.touches[0].clientY;
+    } else {
+      clientX = event.clientX;
+      clientY = event.clientY;
+    }
+    
+    mouseRef.current.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+    mouseRef.current.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+    
+    return { x: clientX - rect.left, y: clientY - rect.top };
+  }
+
+  // Check for intersection with the model
+  function getIntersectionPoint(event: MouseEvent | TouchEvent) {
+    if (!sceneRef.current || !cameraRef.current || !modelRef.current) return null;
+    
+    getPointerPosition(event);
+    
+    raycasterRef.current.setFromCamera(mouseRef.current, cameraRef.current);
+    const intersects = raycasterRef.current.intersectObject(modelRef.current, true);
+    
+    // Filter for meshes that are marked as selectable
+    const selectableIntersects = intersects.filter(
+      (intersect) => intersect.object.userData.isSelectable
+    );
+    
+    if (selectableIntersects.length > 0) {
+      return selectableIntersects[0].point;
+    }
+    
+    return null;
+  }
+
+  // Event handlers for pain marking
+  function handlePointerDown(event: MouseEvent | TouchEvent) {
+    if (mode !== 'mark') return;
+    
+    const point = getIntersectionPoint(event);
+    if (point) {
+      setIsDrawing(true);
+      
+      // Add a new pain marker at the intersection point
+      const newMarker: PainMarker = {
+        position: { x: point.x, y: point.y, z: point.z },
+        color: selectedColor,
+        intensity: intensity
+      };
+      
+      addPainMarker(newMarker);
+      setPainMarkers([...painMarkers, newMarker]);
+    }
+  }
+  
+  function handlePointerMove(event: MouseEvent | TouchEvent) {
+    if (mode !== 'mark' || !isDrawing) return;
+    
+    const point = getIntersectionPoint(event);
+    if (point) {
+      // Add a new pain marker as the user drags
+      const newMarker: PainMarker = {
+        position: { x: point.x, y: point.y, z: point.z },
+        color: selectedColor,
+        intensity: intensity
+      };
+      
+      addPainMarker(newMarker);
+      setPainMarkers([...painMarkers, newMarker]);
+    }
+  }
+  
+  function handlePointerUp() {
+    setIsDrawing(false);
+  }
+
+  // Add visual representation of pain marker
+  function addPainMarker(marker: PainMarker) {
+    if (!sceneRef.current) return;
+    
+    // Convert color string to actual color
+    const colorMap: Record<string, number> = {
+      RED: 0xff0000,
+      BLUE: 0x0000ff,
+      GREEN: 0x00ff00,
+      YELLOW: 0xffff00,
+      PURPLE: 0x800080
+    };
+    
+    const color = colorMap[marker.color] || 0xff0000;
+    
+    // Size based on intensity (1-5)
+    const size = 0.05 + (marker.intensity * 0.03);
+    
+    // Create a sphere to represent the pain point
+    const sphere = new THREE.Mesh(
+      new THREE.SphereGeometry(size),
+      new THREE.MeshBasicMaterial({ color })
+    );
+    
+    sphere.position.set(
+      marker.position.x,
+      marker.position.y,
+      marker.position.z
+    );
+    
+    // Add marker to scene
+    sceneRef.current.add(sphere);
+  }
+
+  function handleSave() {
+    onSave(painMarkers);
+    // Clear markers after saving
+    setPainMarkers([]);
+    
+    // Remove visual markers from scene
+    if (sceneRef.current) {
+      sceneRef.current.children.forEach(child => {
+        if (child instanceof THREE.Mesh && 
+            child.geometry instanceof THREE.SphereGeometry) {
+          sceneRef.current?.remove(child);
+        }
+      });
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -337,8 +463,22 @@ export default function ModelViewer({ onSave }: Props) {
       </div>
 
       <div className="relative w-full aspect-square border rounded-lg overflow-hidden bg-gray-100">
+        {isLoading && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-100 bg-opacity-80 z-10">
+            <Loader className="h-8 w-8 animate-spin mb-2" />
+            <div className="text-sm">Loading model... {Math.round(loadingProgress)}%</div>
+          </div>
+        )}
         <div ref={containerRef} className="w-full h-full touch-none" />
       </div>
+      
+      {mode === 'mark' && painMarkers.length > 0 && (
+        <div className="flex justify-end">
+          <Button onClick={handleSave}>
+            Save Pain Points
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
