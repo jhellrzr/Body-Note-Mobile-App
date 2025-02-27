@@ -26,7 +26,7 @@ const colorMap = {
   PURPLE: '#800080'
 };
 
-export default function PainMarkerCanvas({ image, color, intensity, brushSize }: Props) {
+export default function PainMarkerCanvas({ image, color, intensity, brushSize, onSave }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [markers, setMarkers] = useState<PainMarker[]>([]);
@@ -169,47 +169,100 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize }:
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const imageData = canvas.toDataURL('image/png');
 
-    // Create temporary elements for the save UI
-    const saveDiv = document.createElement('div');
-    saveDiv.style.cssText = `
+    // Create fullscreen overlay with proper mobile styling
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
       position: fixed;
       top: 0;
       left: 0;
-      width: 100%;
-      height: 100%;
+      right: 0;
+      bottom: 0;
       background: white;
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 20px;
+      overflow: hidden;
       z-index: 9999;
+      touch-action: none;
+      -webkit-overflow-scrolling: touch;
+    `;
+
+    const header = document.createElement('div');
+    header.style.cssText = `
+      width: 100%;
+      padding: 1rem;
+      background: #f3f4f6;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
     `;
 
     const closeButton = document.createElement('button');
-    closeButton.innerText = '← Back to Drawing';
+    closeButton.innerText = '← Back';
     closeButton.style.cssText = `
-      padding: 10px 20px;
-      margin: 10px;
-      background: #f3f4f6;
+      padding: 8px 16px;
+      background: none;
       border: none;
-      border-radius: 8px;
       font-family: system-ui;
+      font-size: 16px;
+      color: #2563eb;
+      cursor: pointer;
     `;
-    closeButton.onclick = () => document.body.removeChild(saveDiv);
+    closeButton.onclick = () => {
+      document.body.removeChild(overlay);
+      document.body.style.overflow = '';
+    };
 
     const instructions = document.createElement('p');
-    instructions.innerText = 'Press and hold the image below to save it to your device';
-    instructions.style.cssText = 'font-family: system-ui; text-align: center; margin: 10px 0;';
+    instructions.innerText = 'Press and hold image to save';
+    instructions.style.cssText = `
+      margin: 0;
+      font-family: system-ui;
+      font-size: 16px;
+    `;
+
+    header.appendChild(closeButton);
+    header.appendChild(instructions);
+
+    const imageContainer = document.createElement('div');
+    imageContainer.style.cssText = `
+      flex: 1;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      background: #f8f9fa;
+    `;
 
     const img = document.createElement('img');
     img.src = imageData;
     img.alt = 'Pain tracking image';
-    img.style.cssText = 'max-width: 100%; height: auto;';
+    img.style.cssText = `
+      max-width: 100%;
+      max-height: calc(100vh - 120px);
+      object-fit: contain;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    `;
 
-    saveDiv.appendChild(closeButton);
-    saveDiv.appendChild(instructions);
-    saveDiv.appendChild(img);
-    document.body.appendChild(saveDiv);
+    img.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      const link = document.createElement('a');
+      link.href = imageData;
+      link.download = `pain-marker-${timestamp}.png`;
+      link.click();
+    });
+
+    imageContainer.appendChild(img);
+    overlay.appendChild(header);
+    overlay.appendChild(imageContainer);
+    document.body.appendChild(overlay);
+
+    // Prevent body scrolling while overlay is open
+    document.body.style.overflow = 'hidden';
   };
 
   useEffect(() => {
