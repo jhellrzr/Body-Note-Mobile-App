@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { painTypes } from "@shared/schema";
+import { useToast } from "@/hooks/use-toast";
 
 interface PainMarker {
   type: keyof typeof painTypes;
@@ -30,6 +31,7 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize }:
   const [isDrawing, setIsDrawing] = useState(false);
   const [markers, setMarkers] = useState<PainMarker[]>([]);
   const [currentMarker, setCurrentMarker] = useState<PainMarker | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -238,6 +240,10 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize }:
           files: [new File([blob], filename)],
           title: 'Pain Tracking Image',
         });
+        toast({
+          title: "Success",
+          description: "Image shared successfully",
+        });
         return;
       } catch (err) {
         console.log('Share failed, falling back to download');
@@ -253,6 +259,11 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize }:
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+
+    toast({
+      title: "Success",
+      description: "Image saved successfully",
+    });
   };
 
   useEffect(() => {
