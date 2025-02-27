@@ -1,6 +1,8 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { Button } from '@/components/ui/button';
+import { Hand, MoveHorizontal } from 'lucide-react';
 
 interface Props {
   onSave: (painMarkers: any[]) => void;
@@ -12,6 +14,9 @@ export default function ModelViewer({ onSave }: Props) {
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
+  const [mode, setMode] = useState<'view' | 'mark'>('view');
+  const [modelType, setModelType] = useState<'hand' | 'knee'>('hand');
+  const [painMarkers, setPainMarkers] = useState<any[]>([]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -43,14 +48,60 @@ export default function ModelViewer({ onSave }: Props) {
     controls.dampingFactor = 0.05;
     controlsRef.current = controls;
 
-    // Add cube
-    const geometry = new THREE.BoxGeometry();
-    const material = new THREE.MeshPhongMaterial({ 
-      color: 0x1e88e5,
-      shininess: 100 
-    });
-    const cube = new THREE.Mesh(geometry, material);
-    scene.add(cube);
+    // Create hand model
+    function createHandModel() {
+      const group = new THREE.Group();
+
+      // Palm
+      const palm = new THREE.Mesh(
+        new THREE.BoxGeometry(1, 1.5, 0.2),
+        new THREE.MeshPhongMaterial({ color: 0xe0e0e0 })
+      );
+      group.add(palm);
+
+      // Fingers
+      for (let i = 0; i < 5; i++) {
+        const finger = new THREE.Mesh(
+          new THREE.BoxGeometry(0.2, 0.7, 0.2),
+          new THREE.MeshPhongMaterial({ color: 0xe0e0e0 })
+        );
+        finger.position.y = 1;
+        finger.position.x = (i - 2) * 0.22;
+        group.add(finger);
+      }
+
+      return group;
+    }
+
+    // Create knee model
+    function createKneeModel() {
+      const group = new THREE.Group();
+
+      // Main joint
+      const joint = new THREE.Mesh(
+        new THREE.SphereGeometry(0.8, 32, 32),
+        new THREE.MeshPhongMaterial({ color: 0xe0e0e0 })
+      );
+      group.add(joint);
+
+      // Upper leg
+      const upperLeg = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.4, 0.4, 2),
+        new THREE.MeshPhongMaterial({ color: 0xe0e0e0 })
+      );
+      upperLeg.position.y = 1.5;
+      group.add(upperLeg);
+
+      // Lower leg
+      const lowerLeg = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.4, 0.4, 2),
+        new THREE.MeshPhongMaterial({ color: 0xe0e0e0 })
+      );
+      lowerLeg.position.y = -1.5;
+      group.add(lowerLeg);
+
+      return group;
+    }
 
     // Add lights
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
@@ -63,6 +114,17 @@ export default function ModelViewer({ onSave }: Props) {
     // Add grid helper
     const gridHelper = new THREE.GridHelper(10, 10);
     scene.add(gridHelper);
+
+    // Initial model
+    let currentModel = modelType === 'hand' ? createHandModel() : createKneeModel();
+    scene.add(currentModel);
+
+    // Handle model type changes
+    function updateModel() {
+      scene.remove(currentModel);
+      currentModel = modelType === 'hand' ? createHandModel() : createKneeModel();
+      scene.add(currentModel);
+    }
 
     // Handle window resize
     function handleResize() {
@@ -85,6 +147,9 @@ export default function ModelViewer({ onSave }: Props) {
     }
     animate();
 
+    // Update model when type changes
+    updateModel();
+
     // Cleanup
     return () => {
       window.removeEventListener('resize', handleResize);
@@ -96,11 +161,46 @@ export default function ModelViewer({ onSave }: Props) {
         container.removeChild(renderer.domElement);
       }
     };
-  }, []);
+  }, [modelType]);
 
   return (
-    <div className="relative w-full aspect-square border rounded-lg overflow-hidden bg-gray-100">
-      <div ref={containerRef} className="w-full h-full" />
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <div className="flex space-x-2">
+          <Button
+            variant={modelType === 'hand' ? 'default' : 'outline'}
+            onClick={() => setModelType('hand')}
+          >
+            Hand
+          </Button>
+          <Button
+            variant={modelType === 'knee' ? 'default' : 'outline'}
+            onClick={() => setModelType('knee')}
+          >
+            Knee
+          </Button>
+        </div>
+        <Button
+          variant={mode === 'mark' ? 'default' : 'outline'}
+          onClick={() => setMode(mode === 'view' ? 'mark' : 'view')}
+        >
+          {mode === 'view' ? (
+            <>
+              <MoveHorizontal className="mr-2 h-4 w-4" />
+              Move Model
+            </>
+          ) : (
+            <>
+              <Hand className="mr-2 h-4 w-4" />
+              Mark Pain
+            </>
+          )}
+        </Button>
+      </div>
+
+      <div className="relative w-full aspect-square border rounded-lg overflow-hidden bg-gray-100">
+        <div ref={containerRef} className="w-full h-full" />
+      </div>
     </div>
   );
 }
