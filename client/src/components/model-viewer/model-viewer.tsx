@@ -33,13 +33,14 @@ export default function ModelViewer({ onSave }: Props) {
 
     // Initialize scene
     const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf0f0f0);
     sceneRef.current = scene;
 
     // Initialize camera based on container size
     const container = containerRef.current;
     const aspect = container.clientWidth / container.clientHeight;
     const camera = new THREE.PerspectiveCamera(75, aspect, 0.1, 1000);
-    camera.position.z = 5;
+    camera.position.set(0, 2, 5);
     cameraRef.current = camera;
 
     // Initialize renderer
@@ -49,6 +50,7 @@ export default function ModelViewer({ onSave }: Props) {
     });
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.shadowMap.enabled = true;
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
@@ -56,36 +58,108 @@ export default function ModelViewer({ onSave }: Props) {
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
+    controls.minDistance = 2;
+    controls.maxDistance = 10;
     controlsRef.current = controls;
-
-    // Load hand model
-    const gltfLoader = new GLTFLoader();
-    gltfLoader.load('/attached_assets/uploads_files_5594354_Jewelry+Hand+Holder.glb', (gltf) => {
-      if (modelRef.current) {
-        scene.remove(modelRef.current);
-      }
-      const model = gltf.scene;
-      model.scale.set(2, 2, 2); // Adjust scale as needed
-      model.position.set(0, 0, 0);
-      model.traverse((child) => {
-        if (child instanceof THREE.Mesh) {
-          child.userData.isSelectable = true;
-          child.material.transparent = true;
-          child.material.opacity = 0.8;
-        }
-      });
-      scene.add(model);
-      modelRef.current = model;
-    });
 
     // Create pain marker
     function createPainMarker(position: THREE.Vector3) {
       const markerGeometry = new THREE.SphereGeometry(0.05);
-      const markerMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+      const markerMaterial = new THREE.MeshBasicMaterial({ 
+        color: 0xff0000,
+        transparent: true,
+        opacity: 0.8
+      });
       const marker = new THREE.Mesh(markerGeometry, markerMaterial);
       marker.position.copy(position);
       scene.add(marker);
       return marker;
+    }
+
+    // Load models based on type
+    function loadModel() {
+      if (modelRef.current) {
+        scene.remove(modelRef.current);
+      }
+
+      if (modelType === 'hand') {
+        const loader = new GLTFLoader();
+        loader.load(
+          '/attached_assets/uploads_files_5594354_Jewelry+Hand+Holder.glb',
+          (gltf) => {
+            const model = gltf.scene;
+            model.scale.set(2, 2, 2);
+            model.position.set(0, 0, 0);
+            model.traverse((child) => {
+              if (child instanceof THREE.Mesh) {
+                child.userData.isSelectable = true;
+                child.castShadow = true;
+                child.receiveShadow = true;
+                if (child.material) {
+                  child.material.transparent = true;
+                  child.material.opacity = 0.9;
+                }
+              }
+            });
+            scene.add(model);
+            modelRef.current = model;
+          },
+          (progress) => {
+            console.log('Loading model:', (progress.loaded / progress.total * 100) + '%');
+          },
+          (error) => {
+            console.error('Error loading GLB:', error);
+            createKneeModel(); // Fallback to basic knee model if GLB fails
+          }
+        );
+      } else {
+        createKneeModel();
+      }
+    }
+
+    function createKneeModel() {
+      const group = new THREE.Group();
+
+      // Main joint
+      const joint = new THREE.Mesh(
+        new THREE.SphereGeometry(0.8, 32, 32),
+        new THREE.MeshPhongMaterial({ 
+          color: 0xe0e0e0,
+          transparent: true,
+          opacity: 0.8
+        })
+      );
+      joint.userData.isSelectable = true;
+      group.add(joint);
+
+      // Upper leg
+      const upperLeg = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.4, 0.4, 2),
+        new THREE.MeshPhongMaterial({ 
+          color: 0xe0e0e0,
+          transparent: true,
+          opacity: 0.8
+        })
+      );
+      upperLeg.position.y = 1.5;
+      upperLeg.userData.isSelectable = true;
+      group.add(upperLeg);
+
+      // Lower leg
+      const lowerLeg = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.4, 0.4, 2),
+        new THREE.MeshPhongMaterial({ 
+          color: 0xe0e0e0,
+          transparent: true,
+          opacity: 0.8
+        })
+      );
+      lowerLeg.position.y = -1.5;
+      lowerLeg.userData.isSelectable = true;
+      group.add(lowerLeg);
+
+      scene.add(group);
+      modelRef.current = group;
     }
 
     // Add lights
@@ -94,11 +168,8 @@ export default function ModelViewer({ onSave }: Props) {
 
     const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
     directionalLight.position.set(5, 5, 5);
+    directionalLight.castShadow = true;
     scene.add(directionalLight);
-
-    // Add grid helper
-    const gridHelper = new THREE.GridHelper(10, 10);
-    scene.add(gridHelper);
 
     // Handle window resize
     function handleResize() {
@@ -141,16 +212,17 @@ export default function ModelViewer({ onSave }: Props) {
     function animate() {
       requestAnimationFrame(animate);
       if (controlsRef.current) {
+        controlsRef.current.enabled = mode === 'view';
         if (mode === 'view') {
-          controlsRef.current.enabled = true;
           controlsRef.current.update();
-        } else {
-          controlsRef.current.enabled = false;
         }
       }
       renderer.render(scene, camera);
     }
     animate();
+
+    // Load initial model
+    loadModel();
 
     // Cleanup
     return () => {
@@ -164,11 +236,25 @@ export default function ModelViewer({ onSave }: Props) {
         container.removeChild(renderer.domElement);
       }
     };
-  }, [mode]);
+  }, [modelType, mode]);
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      <div className="flex justify-between items-center">
+        <div className="flex space-x-2">
+          <Button
+            variant={modelType === 'hand' ? 'default' : 'outline'}
+            onClick={() => setModelType('hand')}
+          >
+            Hand
+          </Button>
+          <Button
+            variant={modelType === 'knee' ? 'default' : 'outline'}
+            onClick={() => setModelType('knee')}
+          >
+            Knee
+          </Button>
+        </div>
         <Button
           variant={mode === 'mark' ? 'default' : 'outline'}
           onClick={() => setMode(mode === 'view' ? 'mark' : 'view')}
