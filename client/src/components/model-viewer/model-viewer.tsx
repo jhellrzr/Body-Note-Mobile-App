@@ -1,54 +1,27 @@
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, DirectionalLight } from '@react-three/drei';
-import { useState, Suspense } from 'react';
+import { OrbitControls } from '@react-three/drei';
+import { useRef } from 'react';
+import * as THREE from 'three';
 import { Button } from '@/components/ui/button';
-import CubeTest from './cube-test';
+import { useFrame } from '@react-three/fiber';
+
 
 interface Props {
   onSave: (painMarkers: any[]) => void;
 }
 
-function Loader() {
-  return (
-    <div className="absolute inset-0 flex items-center justify-center">
-      <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
-    </div>
-  );
-}
-
 export default function ModelViewer({ onSave }: Props) {
-  const [activeModel, setActiveModel] = useState<'hand' | 'knee'>('hand');
-
   return (
-    <div className="space-y-4">
-      <div className="flex space-x-2 mb-4">
-        <Button 
-          variant={activeModel === 'hand' ? 'default' : 'outline'}
-          onClick={() => setActiveModel('hand')}
-        >
-          Hand & Wrist
-        </Button>
-        <Button 
-          variant={activeModel === 'knee' ? 'default' : 'outline'}
-          onClick={() => setActiveModel('knee')}
-        >
-          Knee
-        </Button>
-      </div>
-
-      <div className="relative w-full aspect-square border rounded-lg overflow-hidden bg-gray-100">
-        <Canvas
-          camera={{ position: [3, 3, 3], fov: 75 }}
-          onCreated={({ gl }) => {
-            gl.setClearColor('#f5f5f5');
-          }}
-        >
-          <ambientLight intensity={0.5} />
-          <directionalLight position={[2, 2, 2]} />
-          <CubeTest />
-          <OrbitControls />
-        </Canvas>
-      </div>
+    <div className="relative w-full aspect-square border rounded-lg overflow-hidden bg-gray-100">
+      <Canvas camera={{ position: [0, 0, 5] }}>
+        <mesh>
+          <boxGeometry />
+          <meshStandardMaterial color="orange" />
+        </mesh>
+        <ambientLight intensity={0.5} />
+        <pointLight position={[10, 10, 10]} />
+        <OrbitControls enableDamping />
+      </Canvas>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Camera, Upload, Box } from "lucide-react";
+import { Camera, Upload, Shapes } from "lucide-react";
 import PainMarkerCanvas from "@/components/pain-marker/canvas";
 import ModelViewer from "@/components/model-viewer/model-viewer";
 import ColorSelector from "@/components/pain-marker/color-selector";
@@ -38,12 +38,8 @@ export default function Home() {
   });
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log("File selection triggered");
     const file = e.target.files?.[0];
-    if (!file) {
-      console.log("No file selected");
-      return;
-    }
+    if (!file) return;
 
     if (file.size > 5 * 1024 * 1024) {
       toast({
@@ -54,12 +50,10 @@ export default function Home() {
       return;
     }
 
-    console.log("Reading file:", file.name);
     const reader = new FileReader();
     reader.onload = (e) => {
       const result = e.target?.result;
       if (typeof result === 'string') {
-        console.log("File loaded successfully");
         setImage(result);
         setMode('drawing');
       }
@@ -124,8 +118,8 @@ export default function Home() {
                   variant="outline"
                   onClick={() => setMode('model')}
                 >
-                  <Box className="mr-2 h-6 w-6" />
-                  Use 3D Model 
+                  <Shapes className="mr-2 h-6 w-6" />
+                  Use 3D Model
                 </Button>
               </div>
             </div>
@@ -157,7 +151,7 @@ export default function Home() {
               <ModelViewer
                 onSave={(markers) =>
                   mutation.mutate({
-                    imageUrl: "", // We'll need to update the schema to handle 3D model data
+                    imageUrl: "", 
                     painMarkers: markers,
                     notes: "",
                   })
