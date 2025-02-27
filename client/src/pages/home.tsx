@@ -32,11 +32,33 @@ export default function Home() {
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => setImage(e.target?.result as string);
-      reader.readAsDataURL(file);
+    if (!file) return;
+
+    // Check file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "Error",
+        description: "Image size should be less than 5MB",
+        variant: "destructive",
+      });
+      return;
     }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const result = e.target?.result;
+      if (typeof result === 'string') {
+        setImage(result);
+      }
+    };
+    reader.onerror = () => {
+      toast({
+        title: "Error",
+        description: "Failed to read image file",
+        variant: "destructive",
+      });
+    };
+    reader.readAsDataURL(file);
   };
 
   return (
@@ -45,19 +67,37 @@ export default function Home() {
         <CardContent className="p-6">
           {!image ? (
             <div className="text-center">
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                id="camera-input"
-                onChange={handleFileSelect}
-              />
-              <label htmlFor="camera-input">
-                <Button className="w-full h-32" variant="outline">
-                  <Camera className="mr-2 h-6 w-6" />
-                  Take or Upload Photo
-                </Button>
-              </label>
+              <div className="space-y-4">
+                {/* Mobile camera capture */}
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  id="camera-input-mobile"
+                  onChange={handleFileSelect}
+                />
+                <label htmlFor="camera-input-mobile" className="block">
+                  <Button className="w-full h-16" variant="outline">
+                    <Camera className="mr-2 h-6 w-6" />
+                    Take Photo
+                  </Button>
+                </label>
+
+                {/* Regular file upload */}
+                <input
+                  type="file"
+                  accept="image/*;capture=camera"
+                  className="hidden"
+                  id="file-input"
+                  onChange={handleFileSelect}
+                />
+                <label htmlFor="file-input" className="block">
+                  <Button className="w-full h-16" variant="outline">
+                    Choose Image
+                  </Button>
+                </label>
+              </div>
             </div>
           ) : (
             <div className="space-y-4">
@@ -65,11 +105,11 @@ export default function Home() {
                 image={image}
                 color={selectedColor}
                 intensity={intensity}
-                onSave={(markers) => 
+                onSave={(markers) =>
                   mutation.mutate({
                     imageUrl: image,
                     painMarkers: markers,
-                    notes: ""
+                    notes: "",
                   })
                 }
               />
