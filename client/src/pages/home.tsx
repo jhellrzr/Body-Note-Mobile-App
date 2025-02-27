@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Camera, Upload } from "lucide-react";
+import { Camera, Upload, Box } from "lucide-react";
 import PainMarkerCanvas from "@/components/pain-marker/canvas";
+import ModelViewer from "@/components/model-viewer/model-viewer";
 import ColorSelector from "@/components/pain-marker/color-selector";
 import IntensitySelector from "@/components/pain-marker/intensity-selector";
 import BrushSizeSelector from "@/components/pain-marker/brush-size-selector";
@@ -11,7 +12,10 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { PainEntry } from "@shared/schema";
 
+type Mode = 'upload' | 'model' | 'drawing';
+
 export default function Home() {
+  const [mode, setMode] = useState<Mode>('upload');
   const [image, setImage] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState<string>("RED");
   const [intensity, setIntensity] = useState(1);
@@ -29,6 +33,7 @@ export default function Home() {
         description: "Pain entry saved successfully",
       });
       setImage(null);
+      setMode('upload');
     },
   });
 
@@ -40,7 +45,6 @@ export default function Home() {
       return;
     }
 
-    // Check file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       toast({
         title: "Error",
@@ -57,6 +61,7 @@ export default function Home() {
       if (typeof result === 'string') {
         console.log("File loaded successfully");
         setImage(result);
+        setMode('drawing');
       }
     };
     reader.onerror = (error) => {
@@ -74,7 +79,7 @@ export default function Home() {
     <div className="max-w-2xl mx-auto">
       <Card>
         <CardContent className="p-6">
-          {!image ? (
+          {mode === 'upload' && (
             <div className="text-center space-y-4">
               <div>
                 <input
@@ -112,8 +117,21 @@ export default function Home() {
                   Upload Image
                 </Button>
               </div>
+
+              <div>
+                <Button
+                  className="w-full h-16"
+                  variant="outline"
+                  onClick={() => setMode('model')}
+                >
+                  <Box className="mr-2 h-6 w-6" />
+                  Use 3D Model 
+                </Button>
+              </div>
             </div>
-          ) : (
+          )}
+
+          {mode === 'drawing' && image && (
             <div className="space-y-4">
               <PainMarkerCanvas
                 image={image}
@@ -131,6 +149,28 @@ export default function Home() {
               <ColorSelector value={selectedColor} onChange={setSelectedColor} />
               <IntensitySelector value={intensity} onChange={setIntensity} />
               <BrushSizeSelector value={brushSize} onChange={setBrushSize} />
+            </div>
+          )}
+
+          {mode === 'model' && (
+            <div className="space-y-4">
+              <ModelViewer
+                onSave={(markers) =>
+                  mutation.mutate({
+                    imageUrl: "", // We'll need to update the schema to handle 3D model data
+                    painMarkers: markers,
+                    notes: "",
+                  })
+                }
+              />
+              <ColorSelector value={selectedColor} onChange={setSelectedColor} />
+              <IntensitySelector value={intensity} onChange={setIntensity} />
+              <BrushSizeSelector value={brushSize} onChange={setBrushSize} />
+              <div className="flex justify-end">
+                <Button variant="outline" onClick={() => setMode('upload')}>
+                  Back
+                </Button>
+              </div>
             </div>
           )}
         </CardContent>
