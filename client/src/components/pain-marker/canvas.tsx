@@ -15,7 +15,6 @@ interface Props {
   color: string;
   intensity: number;
   brushSize: number;
-  onSave: (markers: PainMarker[]) => void;
 }
 
 const colorMap = {
@@ -26,7 +25,7 @@ const colorMap = {
   PURPLE: '#800080'
 };
 
-export default function PainMarkerCanvas({ image, color, intensity, brushSize, onSave }: Props) {
+export default function PainMarkerCanvas({ image, color, intensity, brushSize }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [markers, setMarkers] = useState<PainMarker[]>([]);
@@ -162,107 +161,41 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
     drawImage();
   };
 
-  const handleSaveToDevice = () => {
+  const handleSaveToDevice = async () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const imageData = canvas.toDataURL('image/png');
-
-    // Create fullscreen overlay with proper mobile styling
-    const overlay = document.createElement('div');
-    overlay.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: white;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      overflow: hidden;
-      z-index: 9999;
-      touch-action: none;
-      -webkit-overflow-scrolling: touch;
-    `;
-
-    const header = document.createElement('div');
-    header.style.cssText = `
-      width: 100%;
-      padding: 1rem;
-      background: #f3f4f6;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      position: sticky;
-      top: 0;
-    `;
-
-    const closeButton = document.createElement('button');
-    closeButton.innerText = '← Back';
-    closeButton.style.cssText = `
-      padding: 8px 16px;
-      background: none;
-      border: none;
-      font-family: system-ui;
-      font-size: 16px;
-      color: #2563eb;
-      cursor: pointer;
-    `;
-    closeButton.onclick = () => {
-      document.body.removeChild(overlay);
-      document.body.style.overflow = '';
-    };
-
-    const instructions = document.createElement('p');
-    instructions.innerText = 'Press and hold image to save';
-    instructions.style.cssText = `
-      margin: 0;
-      font-family: system-ui;
-      font-size: 16px;
-    `;
-
-    header.appendChild(closeButton);
-    header.appendChild(instructions);
-
-    const imageContainer = document.createElement('div');
-    imageContainer.style.cssText = `
-      flex: 1;
-      width: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 1rem;
-      background: #f8f9fa;
-    `;
-
-    const img = document.createElement('img');
-    img.src = imageData;
-    img.alt = 'Pain tracking image';
-    img.style.cssText = `
-      max-width: 100%;
-      max-height: calc(100vh - 120px);
-      object-fit: contain;
-      border-radius: 8px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    `;
-
-    img.addEventListener('touchstart', (e) => {
-      e.preventDefault();
-      const link = document.createElement('a');
-      link.href = imageData;
-      link.download = `pain-marker-${timestamp}.png`;
-      link.click();
+    const blob = await new Promise<Blob>((resolve) => {
+      canvas.toBlob((blob) => {
+        if (blob) resolve(blob);
+      }, 'image/png');
     });
 
-    imageContainer.appendChild(img);
-    overlay.appendChild(header);
-    overlay.appendChild(imageContainer);
-    document.body.appendChild(overlay);
+    const timestamp = new Date().toISOString().slice(0, 10);
+    const filename = `pain-tracking-${timestamp}.png`;
 
-    // Prevent body scrolling while overlay is open
-    document.body.style.overflow = 'hidden';
+    // Try to use the Share API first (better for mobile)
+    if (navigator.share && navigator.canShare({ files: [new File([blob], filename)] })) {
+      try {
+        await navigator.share({
+          files: [new File([blob], filename)],
+          title: 'Pain Tracking Image',
+        });
+        return;
+      } catch (err) {
+        console.log('Share failed, falling back to download');
+      }
+    }
+
+    // Fallback to download
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   useEffect(() => {
