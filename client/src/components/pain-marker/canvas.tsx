@@ -353,7 +353,6 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
     };
   };
 
-
   return (
     <div className="space-y-4">
       <div className="w-full" style={{ paddingBottom: `${(1 / aspectRatio) * 100}%`, position: 'relative' }}>
@@ -382,7 +381,7 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
         )}
         <Button onClick={handleSaveToDevice}>
           <Download className="mr-2 h-4 w-4" />
-          {t('pain.download')}
+          {t('pain.saveToDevice')}
         </Button>
       </div>
     </div>

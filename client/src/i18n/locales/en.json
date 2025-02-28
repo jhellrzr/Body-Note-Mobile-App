@@ -20,6 +20,7 @@
     "save": "Save Pain Points",
     "clear": "Clear",
     "saveToDevice": "Save to Device",
+    "download": "Download",
     "saveSuccess": "Image saved successfully",
     "shareSuccess": "Image shared successfully",
     "instructions": "Mark the areas where you feel pain, then click \"Save to Device\" to download your annotated image. Take a new image each day to build a record of how your pain changes over time.",
