@@ -183,7 +183,7 @@ export default function HomePage() {
                     onClick={() => document.getElementById('upload-different')?.click()}
                   >
                     <Upload className="mr-2 h-4 w-4" />
-                    Upload Different Picture
+                    Reupload
                   </Button>
                   <Button
                     variant="outline"
