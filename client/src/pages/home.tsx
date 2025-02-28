@@ -72,7 +72,7 @@ export default function HomePage() {
 
   const handle2DModelSelect = (part: string, side: string | null, view: string) => {
     const sidePrefix = side ? `${side.toLowerCase()}-` : '';
-    const imagePath = `/assets/body-parts/${part}/${sidePrefix}${view.toLowerCase()}.png`;
+    const imagePath = `/assets/body-parts/${part}/${sidePrefix}${view.toLowerCase()}.svg`;
     setImage(imagePath);
     setMode('drawing');
   };
