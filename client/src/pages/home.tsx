@@ -168,7 +168,6 @@ export default function HomePage() {
                   variant="outline"
                   onClick={() => {
                     setImage(null);
-                    setIsModelImage(false);
                     setMode(isModelImage ? '2d-model' : 'upload');
                   }}
                 >
