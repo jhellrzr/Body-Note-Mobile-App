@@ -33,7 +33,35 @@
     "reupload": "Reupload"
   },
   "common": {
-    "back": "Back"
+    "back": "Back",
+    "backToParts": "Back to Body Parts",
+    "backToSides": "Back to Side Selection",
+    "backToOptions": "Back to Options",
+    "comingSoon": "Coming Soon"
+  },
+  "bodyParts": {
+    "selectPart": "Select Body Part",
+    "selectSide": "Select {{part}} Side",
+    "selectView": "Select {{side}} {{part}} View",
+    "parts": {
+      "hand": "Hand/Wrist",
+      "ankle": "Ankle",
+      "knee": "Knee",
+      "back": "Back"
+    },
+    "sides": {
+      "left": "Left",
+      "right": "Right"
+    },
+    "views": {
+      "palm": "Palm",
+      "back": "Back",
+      "front": "Front",
+      "full": "Full",
+      "upper": "Upper",
+      "middle": "Middle",
+      "lower": "Lower"
+    }
   },
   "modelViewer": {
     "loading": "Loading model...",

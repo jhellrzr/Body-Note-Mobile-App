@@ -33,7 +33,35 @@
     "reupload": "Volver a Subir"
   },
   "common": {
-    "back": "Volver"
+    "back": "Volver",
+    "backToParts": "Volver a Partes del Cuerpo",
+    "backToSides": "Volver a Selección de Lado",
+    "backToOptions": "Volver a Opciones",
+    "comingSoon": "Próximamente"
+  },
+  "bodyParts": {
+    "selectPart": "Seleccionar Parte del Cuerpo",
+    "selectSide": "Seleccionar Lado de {{part}}",
+    "selectView": "Seleccionar Vista {{side}} de {{part}}",
+    "parts": {
+      "hand": "Mano/Muñeca",
+      "ankle": "Tobillo",
+      "knee": "Rodilla",
+      "back": "Espalda"
+    },
+    "sides": {
+      "left": "Izquierda",
+      "right": "Derecha"
+    },
+    "views": {
+      "palm": "Palma",
+      "back": "Dorso",
+      "front": "Frente",
+      "full": "Completa",
+      "upper": "Superior",
+      "middle": "Media",
+      "lower": "Inferior"
+    }
   },
   "modelViewer": {
     "loading": "Cargando modelo...",
