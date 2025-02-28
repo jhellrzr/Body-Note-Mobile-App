@@ -4,14 +4,9 @@ import { Card } from "@/components/ui/card";
 
 const BODY_PARTS = {
   hand: {
-    name: "Hand",
+    name: "Hand/Wrist",
     sides: ["Left", "Right"],
-    views: ["Front", "Back", "Side", "Palm"]
-  },
-  wrist: {
-    name: "Wrist",
-    sides: ["Left", "Right"],
-    views: ["Front", "Back", "Side-In", "Side-Out"]
+    views: ["Palm", "Back", "Side-In", "Side-Out"]
   },
   ankle: {
     name: "Ankle",
