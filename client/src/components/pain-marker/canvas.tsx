@@ -36,18 +36,40 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize }:
   const [currentMarker, setCurrentMarker] = useState<PainMarker | null>(null);
   const [aspectRatio, setAspectRatio] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadingError, setLoadingError] = useState<string | null>(null);
   const { toast } = useToast();
 
   // Initialize image once
   useEffect(() => {
+    if (!image) {
+      console.error("No image URL provided");
+      setLoadingError("No image URL provided");
+      setIsLoading(false);
+      return;
+    }
+
+    console.log("Starting to load image:", image);
+    setIsLoading(true);
+    setLoadingError(null);
+
+    // Cleanup previous image
+    if (imageRef.current) {
+      imageRef.current.onload = null;
+      imageRef.current.onerror = null;
+    }
+
     const img = new Image();
     imageRef.current = img;
-    img.src = image;
-    setIsLoading(true);
 
     img.onload = () => {
+      console.log("Image loaded successfully:", image);
       const canvas = canvasRef.current;
-      if (!canvas) return;
+      if (!canvas) {
+        console.error("Canvas ref not available");
+        setLoadingError("Canvas initialization failed");
+        setIsLoading(false);
+        return;
+      }
 
       const maxWidth = 800;
       const scale = Math.min(1, maxWidth / img.width);
@@ -57,11 +79,26 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize }:
       canvas.width = width;
       canvas.height = height;
       setAspectRatio(width / height);
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        console.error("Failed to get canvas context");
+        setLoadingError("Canvas context initialization failed");
+        setIsLoading(false);
+        return;
+      }
+
+      // Draw initial image
+      ctx.clearRect(0, 0, width, height);
+      ctx.drawImage(img, 0, 0, width, height);
+
       setIsLoading(false);
-      drawImage();
+      console.log("Initial image draw complete");
     };
 
-    img.onerror = () => {
+    img.onerror = (error) => {
+      console.error("Error loading image:", error);
+      setLoadingError("Failed to load image");
       setIsLoading(false);
       toast({
         title: t('error'),
@@ -70,6 +107,15 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize }:
       });
     };
 
+    // Set image source after setting up event handlers
+    try {
+      img.src = image;
+    } catch (error) {
+      console.error("Error setting image source:", error);
+      setLoadingError("Invalid image source");
+      setIsLoading(false);
+    }
+
     return () => {
       if (imageRef.current) {
         imageRef.current.onload = null;
@@ -77,14 +123,17 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize }:
         imageRef.current = null;
       }
     };
-  }, [image]);
+  }, [image, t]);
 
   const drawImage = () => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
     const img = imageRef.current;
 
-    if (!canvas || !ctx || !img) return;
+    if (!canvas || !ctx || !img) {
+      console.error("Missing required refs for drawing"); 
+      return;
+    }
 
     // Clear and draw base image
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -333,6 +382,10 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize }:
         {isLoading ? (
           <div className="absolute inset-0 flex items-center justify-center bg-muted rounded-lg">
             <Loader2 className="h-8 w-8 animate-spin" />
+          </div>
+        ) : loadingError ? (
+          <div className="absolute inset-0 flex items-center justify-center bg-muted rounded-lg">
+            <p className="text-destructive">{loadingError}</p>
           </div>
         ) : (
           <canvas
