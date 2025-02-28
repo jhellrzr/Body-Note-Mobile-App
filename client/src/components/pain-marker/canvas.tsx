@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
+import { Download, Loader2 } from "lucide-react";
 import { painTypes } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
@@ -30,54 +30,73 @@ const colorMap = {
 export default function PainMarkerCanvas({ image, color, intensity, brushSize }: Props) {
   const { t } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const imageRef = useRef<HTMLImageElement | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [markers, setMarkers] = useState<PainMarker[]>([]);
   const [currentMarker, setCurrentMarker] = useState<PainMarker | null>(null);
   const [aspectRatio, setAspectRatio] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
+  // Initialize image once
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
     const img = new Image();
+    imageRef.current = img;
     img.src = image;
+    setIsLoading(true);
+
     img.onload = () => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+
       const maxWidth = 800;
       const scale = Math.min(1, maxWidth / img.width);
       const width = img.width * scale;
       const height = img.height * scale;
 
-      // Set canvas dimensions
       canvas.width = width;
       canvas.height = height;
-
-      // Calculate and set aspect ratio
       setAspectRatio(width / height);
-
-      // Draw image immediately
+      setIsLoading(false);
       drawImage();
+    };
+
+    img.onerror = () => {
+      setIsLoading(false);
+      toast({
+        title: t('error'),
+        description: t('pain.imageLoadError'),
+        variant: "destructive",
+      });
+    };
+
+    return () => {
+      if (imageRef.current) {
+        imageRef.current.onload = null;
+        imageRef.current.onerror = null;
+        imageRef.current = null;
+      }
     };
   }, [image]);
 
   const drawImage = () => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
-    if (!canvas || !ctx) return;
+    const img = imageRef.current;
 
+    if (!canvas || !ctx || !img) return;
+
+    // Clear and draw base image
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const img = new Image();
-    img.src = image;
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
+    // Draw existing markers
     markers.forEach(marker => {
       if (marker.points.length < 2) return;
       drawLine(ctx, marker.points, marker.type, marker.intensity, marker.brushSize);
     });
 
+    // Draw current marker if exists
     if (currentMarker?.points.length && currentMarker.points.length > 1) {
       drawLine(ctx, currentMarker.points, currentMarker.type, currentMarker.intensity, currentMarker.brushSize);
     }
@@ -311,18 +330,24 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize }:
   return (
     <div className="space-y-4">
       <div className="w-full" style={{ paddingBottom: `${(1 / aspectRatio) * 100}%`, position: 'relative' }}>
-        <canvas
-          ref={canvasRef}
-          onMouseDown={startDrawing}
-          onMouseMove={draw}
-          onMouseUp={stopDrawing}
-          onMouseLeave={stopDrawing}
-          onTouchStart={startDrawing}
-          onTouchMove={draw}
-          onTouchEnd={stopDrawing}
-          onTouchCancel={stopDrawing}
-          className="cursor-crosshair border rounded-lg touch-none absolute inset-0 w-full h-full"
-        />
+        {isLoading ? (
+          <div className="absolute inset-0 flex items-center justify-center bg-muted rounded-lg">
+            <Loader2 className="h-8 w-8 animate-spin" />
+          </div>
+        ) : (
+          <canvas
+            ref={canvasRef}
+            onMouseDown={startDrawing}
+            onMouseMove={draw}
+            onMouseUp={stopDrawing}
+            onMouseLeave={stopDrawing}
+            onTouchStart={startDrawing}
+            onTouchMove={draw}
+            onTouchEnd={stopDrawing}
+            onTouchCancel={stopDrawing}
+            className="cursor-crosshair border rounded-lg touch-none absolute inset-0 w-full h-full"
+          />
+        )}
       </div>
       <div className="flex justify-end space-x-2">
         <Button variant="outline" onClick={handleClear}>
