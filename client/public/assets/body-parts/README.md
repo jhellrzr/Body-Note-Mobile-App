@@ -6,25 +6,41 @@ Directory structure:
 ```
 body-parts/
 ├── hand/
-│   ├── front.png
-│   ├── back.png
-│   ├── side.png
-│   └── palm.png
+│   ├── left-front.png
+│   ├── left-back.png
+│   ├── left-side.png
+│   ├── left-palm.png
+│   ├── right-front.png
+│   ├── right-back.png
+│   ├── right-side.png
+│   └── right-palm.png
 ├── wrist/
-│   ├── front.png
-│   ├── back.png
-│   ├── side-in.png
-│   └── side-out.png
+│   ├── left-front.png
+│   ├── left-back.png
+│   ├── left-side-in.png
+│   ├── left-side-out.png
+│   ├── right-front.png
+│   ├── right-back.png
+│   ├── right-side-in.png
+│   └── right-side-out.png
 ├── ankle/
-│   ├── front.png
-│   ├── back.png
-│   ├── side-in.png
-│   └── side-out.png
+│   ├── left-front.png
+│   ├── left-back.png
+│   ├── left-side-in.png
+│   ├── left-side-out.png
+│   ├── right-front.png
+│   ├── right-back.png
+│   ├── right-side-in.png
+│   └── right-side-out.png
 ├── knee/
-│   ├── front.png
-│   ├── back.png
-│   ├── side-in.png
-│   └── side-out.png
+│   ├── left-front.png
+│   ├── left-back.png
+│   ├── left-side-in.png
+│   ├── left-side-out.png
+│   ├── right-front.png
+│   ├── right-back.png
+│   ├── right-side-in.png
+│   └── right-side-out.png
 └── back/
     ├── full.png
     ├── upper.png

@@ -70,9 +70,9 @@ export default function Home() {
     reader.readAsDataURL(file);
   };
 
-  const handle2DModelSelect = (part: string, view: string) => {
-    // TODO: Load the corresponding image based on part and view
-    const imagePath = `/assets/body-parts/${part}/${view.toLowerCase()}.png`;
+  const handle2DModelSelect = (part: string, side: string | null, view: string) => {
+    const sidePrefix = side ? `${side.toLowerCase()}-` : '';
+    const imagePath = `/assets/body-parts/${part}/${sidePrefix}${view.toLowerCase()}.png`;
     setImage(imagePath);
     setMode('drawing');
   };

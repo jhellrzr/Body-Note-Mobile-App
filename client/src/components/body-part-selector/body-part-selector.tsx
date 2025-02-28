@@ -5,22 +5,27 @@ import { Card } from "@/components/ui/card";
 const BODY_PARTS = {
   hand: {
     name: "Hand",
+    sides: ["Left", "Right"],
     views: ["Front", "Back", "Side", "Palm"]
   },
   wrist: {
     name: "Wrist",
+    sides: ["Left", "Right"],
     views: ["Front", "Back", "Side-In", "Side-Out"]
   },
   ankle: {
     name: "Ankle",
+    sides: ["Left", "Right"],
     views: ["Front", "Back", "Side-In", "Side-Out"]
   },
   knee: {
     name: "Knee",
+    sides: ["Left", "Right"],
     views: ["Front", "Back", "Side-In", "Side-Out"]
   },
   back: {
     name: "Back",
+    sides: null,
     views: ["Full", "Upper", "Middle", "Lower"]
   }
 };
@@ -28,31 +33,60 @@ const BODY_PARTS = {
 type BodyPart = keyof typeof BODY_PARTS;
 
 interface Props {
-  onSelect: (part: BodyPart, view: string) => void;
+  onSelect: (part: BodyPart, side: string | null, view: string) => void;
   onBack: () => void;
 }
 
 export default function BodyPartSelector({ onSelect, onBack }: Props) {
   const [selectedPart, setSelectedPart] = useState<BodyPart | null>(null);
+  const [selectedSide, setSelectedSide] = useState<string | null>(null);
+
+  if (selectedPart && BODY_PARTS[selectedPart].sides && !selectedSide) {
+    return (
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold mb-4">Select {BODY_PARTS[selectedPart].name} Side</h3>
+        <div className="grid grid-cols-2 gap-4">
+          {BODY_PARTS[selectedPart].sides!.map((side) => (
+            <Button
+              key={side}
+              variant="outline"
+              className="h-24 text-lg"
+              onClick={() => setSelectedSide(side)}
+            >
+              {side}
+            </Button>
+          ))}
+        </div>
+        <Button variant="outline" onClick={() => setSelectedPart(null)}>
+          Back to Body Parts
+        </Button>
+      </div>
+    );
+  }
 
   if (selectedPart) {
     return (
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold mb-4">Select {BODY_PARTS[selectedPart].name} View</h3>
+        <h3 className="text-lg font-semibold mb-4">
+          Select {selectedSide ? `${selectedSide} ` : ''}{BODY_PARTS[selectedPart].name} View
+        </h3>
         <div className="grid grid-cols-2 gap-4">
           {BODY_PARTS[selectedPart].views.map((view) => (
             <Button
               key={view}
               variant="outline"
               className="h-24 text-lg"
-              onClick={() => onSelect(selectedPart, view)}
+              onClick={() => onSelect(selectedPart, selectedSide, view)}
             >
               {view}
             </Button>
           ))}
         </div>
-        <Button variant="outline" onClick={() => setSelectedPart(null)}>
-          Back to Body Parts
+        <Button 
+          variant="outline" 
+          onClick={() => selectedSide ? setSelectedSide(null) : setSelectedPart(null)}
+        >
+          Back to {selectedSide ? 'Side Selection' : 'Body Parts'}
         </Button>
       </div>
     );
@@ -74,7 +108,7 @@ export default function BodyPartSelector({ onSelect, onBack }: Props) {
         ))}
       </div>
       <Button variant="outline" onClick={onBack}>
-        Back
+        Back to Options
       </Button>
     </div>
   );
