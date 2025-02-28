@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Camera, Upload, Shapes, Lock, Image, HomeIcon } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import PainMarkerCanvas from "@/components/pain-marker/canvas";
 import ModelViewer from "@/components/model-viewer/model-viewer";
 import ColorSelector from "@/components/pain-marker/color-selector";
@@ -16,6 +17,7 @@ import type { PainEntry, PainMarker } from "@shared/schema";
 type Mode = 'upload' | 'model' | 'drawing' | '2d-model';
 
 export default function HomePage() {
+  const { t } = useTranslation();
   const [mode, setMode] = useState<Mode>('upload');
   const [image, setImage] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState<string>("RED");
@@ -33,8 +35,8 @@ export default function HomePage() {
     },
     onSuccess: () => {
       toast({
-        title: "Success",
-        description: "Pain entry saved successfully",
+        title: t('success'),
+        description: t('pain.saveSuccess'),
       });
       setImage(null);
       setMode('upload');
@@ -105,9 +107,9 @@ export default function HomePage() {
           {mode === 'upload' && (
             <div className="text-center space-y-4">
               <div className="mb-6">
-                <h2 className="text-xl font-semibold mb-2">Track Your Pain Points</h2>
+                <h2 className="text-xl font-semibold mb-2">{t('pain.types.title')}</h2>
                 <p className="text-muted-foreground mb-4">
-                  Take a photo of the affected body part or use our anatomical models to precisely mark and track your pain.
+                  {t('pain.trackDescription')}
                 </p>
               </div>
               <div>
@@ -125,7 +127,7 @@ export default function HomePage() {
                   onClick={() => document.getElementById('camera-input')?.click()}
                 >
                   <Camera className="mr-2 h-6 w-6" />
-                  Take Photo
+                  {t('upload.takePhoto')}
                 </Button>
               </div>
 
@@ -143,7 +145,7 @@ export default function HomePage() {
                   onClick={() => document.getElementById('file-input')?.click()}
                 >
                   <Upload className="mr-2 h-6 w-6" />
-                  Upload Image
+                  {t('upload.uploadImage')}
                 </Button>
               </div>
 
@@ -154,7 +156,7 @@ export default function HomePage() {
                   onClick={() => setMode('2d-model')}
                 >
                   <Image className="mr-2 h-6 w-6" />
-                  Use 2D Model
+                  {t('upload.use2DModel')}
                 </Button>
               </div>
 
@@ -166,7 +168,7 @@ export default function HomePage() {
                 >
                   <Lock className="mr-2 h-6 w-6" />
                   <Shapes className="mr-2 h-6 w-6" />
-                  3D Model (Coming Soon)
+                  {t('upload.use3DModel')}
                 </Button>
               </div>
             </div>
@@ -188,7 +190,7 @@ export default function HomePage() {
                   variant="outline"
                   onClick={handleDrawingBack}
                 >
-                  Back
+                  {t('common.back')}
                 </Button>
                 <div className="flex items-center space-x-2">
                   {!isModelImage && (
@@ -205,7 +207,7 @@ export default function HomePage() {
                         onClick={() => document.getElementById('upload-different')?.click()}
                       >
                         <Upload className="mr-2 h-4 w-4" />
-                        Reupload
+                        {t('upload.reupload')}
                       </Button>
                     </>
                   )}
@@ -226,8 +228,7 @@ export default function HomePage() {
 
               <div className="bg-muted/50 p-4 rounded-lg mb-4">
                 <p className="text-sm text-muted-foreground">
-                  Mark the areas where you feel pain, then click "Save to Device" to download your annotated image. 
-                  Take a new image each day to build a record of how your pain changes over time.
+                  {t('pain.instructions')}
                 </p>
               </div>
 

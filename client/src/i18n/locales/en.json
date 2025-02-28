@@ -21,7 +21,19 @@
     "clear": "Clear",
     "saveToDevice": "Save to Device",
     "saveSuccess": "Image saved successfully",
-    "shareSuccess": "Image shared successfully"
+    "shareSuccess": "Image shared successfully",
+    "instructions": "Mark the areas where you feel pain, then click \"Save to Device\" to download your annotated image. Take a new image each day to build a record of how your pain changes over time.",
+    "trackDescription": "Take a photo of the affected body part or use our anatomical models to precisely mark and track your pain."
+  },
+  "upload": {
+    "takePhoto": "Take Photo",
+    "uploadImage": "Upload Image",
+    "use2DModel": "Use 2D Model",
+    "use3DModel": "3D Model (Coming Soon)",
+    "reupload": "Reupload"
+  },
+  "common": {
+    "back": "Back"
   },
   "modelViewer": {
     "loading": "Loading model...",

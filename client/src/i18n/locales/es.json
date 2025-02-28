@@ -21,7 +21,19 @@
     "clear": "Limpiar",
     "saveToDevice": "Guardar en Dispositivo",
     "saveSuccess": "Imagen guardada exitosamente",
-    "shareSuccess": "Imagen compartida exitosamente"
+    "shareSuccess": "Imagen compartida exitosamente",
+    "instructions": "Marca las áreas donde sientes dolor, luego haz clic en \"Guardar en Dispositivo\" para descargar tu imagen anotada. Toma una nueva imagen cada día para crear un registro de cómo cambia tu dolor con el tiempo.",
+    "trackDescription": "Toma una foto de la parte del cuerpo afectada o usa nuestros modelos anatómicos para marcar y seguir tu dolor con precisión."
+  },
+  "upload": {
+    "takePhoto": "Tomar Foto",
+    "uploadImage": "Subir Imagen",
+    "use2DModel": "Usar Modelo 2D",
+    "use3DModel": "Modelo 3D (Próximamente)",
+    "reupload": "Volver a Subir"
+  },
+  "common": {
+    "back": "Volver"
   },
   "modelViewer": {
     "loading": "Cargando modelo...",
