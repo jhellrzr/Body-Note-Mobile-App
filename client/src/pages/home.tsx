@@ -127,6 +127,17 @@ export default function Home() {
 
           {mode === 'drawing' && image && (
             <div className="space-y-4">
+              <div className="flex justify-between items-center mb-4">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setImage(null);
+                    setMode('upload');
+                  }}
+                >
+                  Back
+                </Button>
+              </div>
               <PainMarkerCanvas
                 image={image}
                 color={selectedColor}
@@ -151,7 +162,7 @@ export default function Home() {
               <ModelViewer
                 onSave={(markers) =>
                   mutation.mutate({
-                    imageUrl: "", 
+                    imageUrl: "",
                     painMarkers: markers,
                     notes: "",
                   })
