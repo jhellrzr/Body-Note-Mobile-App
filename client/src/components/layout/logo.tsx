@@ -1,14 +1,19 @@
-import { LayoutDashboard } from "lucide-react";
+import { Heart } from "lucide-react";
 
 export default function Logo() {
   return (
     <div className="flex items-center gap-2">
-      <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary">
-        <LayoutDashboard className="w-5 h-5 text-primary-foreground" />
+      <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-primary/10">
+        <Heart className="w-5 h-5 text-primary" />
       </div>
-      <span className="font-semibold text-xl bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-        Body Note
-      </span>
+      <div className="flex flex-col">
+        <span className="font-semibold text-xl tracking-tight text-foreground">
+          Body Note
+        </span>
+        <span className="text-xs text-muted-foreground leading-none">
+          Pain Tracking Made Simple
+        </span>
+      </div>
     </div>
   );
 }
