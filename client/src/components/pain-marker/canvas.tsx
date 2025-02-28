@@ -31,6 +31,7 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize }:
   const [isDrawing, setIsDrawing] = useState(false);
   const [markers, setMarkers] = useState<PainMarker[]>([]);
   const [currentMarker, setCurrentMarker] = useState<PainMarker | null>(null);
+  const [aspectRatio, setAspectRatio] = useState(1);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -45,8 +46,17 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize }:
     img.onload = () => {
       const maxWidth = 800;
       const scale = Math.min(1, maxWidth / img.width);
-      canvas.width = img.width * scale;
-      canvas.height = img.height * scale;
+      const width = img.width * scale;
+      const height = img.height * scale;
+
+      // Set canvas dimensions
+      canvas.width = width;
+      canvas.height = height;
+
+      // Calculate and set aspect ratio
+      setAspectRatio(width / height);
+
+      // Draw image immediately
       drawImage();
     };
   }, [image]);
@@ -298,19 +308,20 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize }:
 
   return (
     <div className="space-y-4">
-      <canvas
-        ref={canvasRef}
-        onMouseDown={startDrawing}
-        onMouseMove={draw}
-        onMouseUp={stopDrawing}
-        onMouseLeave={stopDrawing}
-        onTouchStart={startDrawing}
-        onTouchMove={draw}
-        onTouchEnd={stopDrawing}
-        onTouchCancel={stopDrawing}
-        className="w-full cursor-crosshair border rounded-lg touch-none"
-        style={{ aspectRatio: canvasRef.current ? canvasRef.current.width / canvasRef.current.height : 1 }}
-      />
+      <div className="w-full" style={{ paddingBottom: `${(1 / aspectRatio) * 100}%`, position: 'relative' }}>
+        <canvas
+          ref={canvasRef}
+          onMouseDown={startDrawing}
+          onMouseMove={draw}
+          onMouseUp={stopDrawing}
+          onMouseLeave={stopDrawing}
+          onTouchStart={startDrawing}
+          onTouchMove={draw}
+          onTouchEnd={stopDrawing}
+          onTouchCancel={stopDrawing}
+          className="cursor-crosshair border rounded-lg touch-none absolute inset-0 w-full h-full"
+        />
+      </div>
       <div className="flex justify-end space-x-2">
         <Button variant="outline" onClick={handleClear}>
           Clear
