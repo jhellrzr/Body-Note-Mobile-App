@@ -237,13 +237,6 @@ export default function HomePage() {
                 color={selectedColor}
                 intensity={intensity}
                 brushSize={brushSize}
-                onSave={(markers: PainMarker[]) =>
-                  mutation.mutate({
-                    imageUrl: image,
-                    painMarkers: markers,
-                    notes: "",
-                  })
-                }
               />
               <ColorSelector value={selectedColor} onChange={setSelectedColor} />
               <IntensitySelector value={intensity} onChange={setIntensity} />
