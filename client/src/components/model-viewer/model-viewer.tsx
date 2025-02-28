@@ -1,6 +1,6 @@
-
 import { useRef, useEffect, useState } from 'react';
 import * as THREE from 'three';
+import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { Switch } from "@/components/ui/switch";
@@ -67,7 +67,7 @@ export default function ModelViewer({ onSave, selectedColor, intensity }: Props)
     // Setup lighting
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     scene.add(ambientLight);
-    
+
     const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
     directionalLight.position.set(2, 4, 3);
     scene.add(directionalLight);
@@ -116,7 +116,7 @@ export default function ModelViewer({ onSave, selectedColor, intensity }: Props)
   function loadModel(type: 'hand' | 'knee') {
     if (!sceneRef.current) return;
     const scene = sceneRef.current;
-    
+
     // Remove existing model
     if (modelRef.current) {
       scene.remove(modelRef.current);
@@ -125,99 +125,68 @@ export default function ModelViewer({ onSave, selectedColor, intensity }: Props)
 
     // Create group for model
     const group = new THREE.Group();
-    
+
+    const loader = new GLTFLoader();
     if (type === 'hand') {
       setIsLoading(true);
-      console.log("Loading hand model...");
-      
-      // Create loader with progress tracking
-      const loader = new GLTFLoader();
       loader.load(
-        '/models/hand.glb', // Path to your model
-        (gltf) => {
-          const model = gltf.scene;
-          model.scale.set(2, 2, 2);
-          model.position.set(0, 0, 0);
-          model.rotation.set(0, 0, 0);
-          
-          // Make model selectable for pain marking
-          model.traverse((child) => {
-            if (child instanceof THREE.Mesh) {
-              child.userData.isSelectable = true;
-              
-              // Update material for better visualization
-              if (child.material) {
-                child.material = new THREE.MeshPhongMaterial({
-                  color: 0xe0e0e0,
-                  transparent: true,
-                  opacity: 0.9,
-                });
-              }
-            }
-          });
-          
-          group.add(model);
-          scene.add(group);
-          modelRef.current = group;
-          setIsLoading(false);
-          setLoadingProgress(100);
-        },
-        (xhr) => {
-          setLoadingProgress((xhr.loaded / xhr.total) * 100);
-          console.log("Loading progress:", ((xhr.loaded / xhr.total) * 100) + "%");
-        },
-        (error) => {
-          console.error('Error loading hand model:', error);
-          setIsLoading(false);
-          // Fallback to primitive shape if model fails to load
-          createFallbackHandModel(group, scene);
-        }
+        '/models/hand.glb',
+        handleGLTFLoad,
+        handleLoadProgress,
+        handleLoadError
       );
     } else if (type === 'knee') {
       setIsLoading(true);
-      
-      // Create loader
-      const loader = new GLTFLoader();
       loader.load(
-        '/models/knee.glb', // Path to your model
-        (gltf) => {
-          const model = gltf.scene;
-          model.scale.set(2, 2, 2);
-          model.position.set(0, 0, 0);
-          
-          // Make model selectable for pain marking
-          model.traverse((child) => {
-            if (child instanceof THREE.Mesh) {
-              child.userData.isSelectable = true;
-              
-              if (child.material) {
-                child.material = new THREE.MeshPhongMaterial({
-                  color: 0xe0e0e0,
-                  transparent: true,
-                  opacity: 0.9,
-                });
-              }
-            }
-          });
-          
-          group.add(model);
-          scene.add(group);
-          modelRef.current = group;
-          setIsLoading(false);
-          setLoadingProgress(100);
-        },
-        (xhr) => {
-          setLoadingProgress((xhr.loaded / xhr.total) * 100);
-        },
-        (error) => {
-          console.error('Error loading knee model:', error);
-          setIsLoading(false);
-          // Fallback to primitive shape if model fails to load
-          createFallbackKneeModel(group, scene);
-        }
+        '/models/knee.glb',
+        handleGLTFLoad,
+        handleLoadProgress,
+        handleLoadError
       );
     }
   }
+
+  const handleGLTFLoad = (gltf: GLTF) => {
+    const model = gltf.scene;
+    model.scale.set(2, 2, 2);
+    model.position.set(0, 0, 0);
+    model.rotation.set(0, 0, 0);
+
+    model.traverse((child: THREE.Object3D) => {
+      if (child instanceof THREE.Mesh) {
+        child.userData.isSelectable = true;
+
+        if (child.material) {
+          child.material = new THREE.MeshPhongMaterial({
+            color: 0xe0e0e0,
+            transparent: true,
+            opacity: 0.9,
+          });
+        }
+      }
+    });
+
+    group.add(model);
+    scene.add(group);
+    modelRef.current = group;
+    setIsLoading(false);
+    setLoadingProgress(100);
+  };
+
+  const handleLoadProgress = (xhr: ProgressEvent) => {
+    setLoadingProgress((xhr.loaded / xhr.total) * 100);
+  };
+
+  const handleLoadError = (error: ErrorEvent) => {
+    console.error('Error loading model:', error);
+    setIsLoading(false);
+    if (type === 'hand') {
+      createFallbackHandModel(group, scene);
+    } else {
+      createFallbackKneeModel(group, scene);
+    }
+  };
+
 
   // Fallback models in case GLB loading fails
   function createFallbackHandModel(group: THREE.Group, scene: THREE.Scene) {
@@ -233,7 +202,7 @@ export default function ModelViewer({ onSave, selectedColor, intensity }: Props)
     );
     palm.userData.isSelectable = true;
     group.add(palm);
-    
+
     // Fingers
     for (let i = 0; i < 5; i++) {
       const finger = new THREE.Mesh(
@@ -250,11 +219,11 @@ export default function ModelViewer({ onSave, selectedColor, intensity }: Props)
       finger.userData.isSelectable = true;
       group.add(finger);
     }
-    
+
     scene.add(group);
     modelRef.current = group;
   }
-  
+
   function createFallbackKneeModel(group: THREE.Group, scene: THREE.Scene) {
     // Upper leg
     const upperLeg = new THREE.Mesh(
@@ -268,7 +237,7 @@ export default function ModelViewer({ onSave, selectedColor, intensity }: Props)
     upperLeg.position.y = 1.5;
     upperLeg.userData.isSelectable = true;
     group.add(upperLeg);
-    
+
     // Knee joint
     const knee = new THREE.Mesh(
       new THREE.SphereGeometry(0.6),
@@ -280,7 +249,7 @@ export default function ModelViewer({ onSave, selectedColor, intensity }: Props)
     );
     knee.userData.isSelectable = true;
     group.add(knee);
-    
+
     // Lower leg
     const lowerLeg = new THREE.Mesh(
       new THREE.CylinderGeometry(0.4, 0.4, 2),
@@ -302,10 +271,10 @@ export default function ModelViewer({ onSave, selectedColor, intensity }: Props)
   function getPointerPosition(event: MouseEvent | TouchEvent) {
     const container = containerRef.current;
     if (!container) return { x: 0, y: 0 };
-    
+
     const rect = container.getBoundingClientRect();
     let clientX, clientY;
-    
+
     if ('touches' in event) {
       clientX = event.touches[0].clientX;
       clientY = event.touches[0].clientY;
@@ -313,57 +282,57 @@ export default function ModelViewer({ onSave, selectedColor, intensity }: Props)
       clientX = event.clientX;
       clientY = event.clientY;
     }
-    
+
     mouseRef.current.x = ((clientX - rect.left) / rect.width) * 2 - 1;
     mouseRef.current.y = -((clientY - rect.top) / rect.height) * 2 + 1;
-    
+
     return { x: clientX - rect.left, y: clientY - rect.top };
   }
 
   // Check for intersection with the model
   function getIntersectionPoint(event: MouseEvent | TouchEvent) {
     if (!sceneRef.current || !cameraRef.current || !modelRef.current) return null;
-    
+
     getPointerPosition(event);
-    
+
     raycasterRef.current.setFromCamera(mouseRef.current, cameraRef.current);
     const intersects = raycasterRef.current.intersectObject(modelRef.current, true);
-    
+
     // Filter for meshes that are marked as selectable
     const selectableIntersects = intersects.filter(
       (intersect) => intersect.object.userData.isSelectable
     );
-    
+
     if (selectableIntersects.length > 0) {
       return selectableIntersects[0].point;
     }
-    
+
     return null;
   }
 
   // Event handlers for pain marking
   function handlePointerDown(event: MouseEvent | TouchEvent) {
     if (mode !== 'mark') return;
-    
+
     const point = getIntersectionPoint(event);
     if (point) {
       setIsDrawing(true);
-      
+
       // Add a new pain marker at the intersection point
       const newMarker: PainMarker = {
         position: { x: point.x, y: point.y, z: point.z },
         color: selectedColor,
         intensity: intensity
       };
-      
+
       addPainMarker(newMarker);
       setPainMarkers([...painMarkers, newMarker]);
     }
   }
-  
+
   function handlePointerMove(event: MouseEvent | TouchEvent) {
     if (mode !== 'mark' || !isDrawing) return;
-    
+
     const point = getIntersectionPoint(event);
     if (point) {
       // Add a new pain marker as the user drags
@@ -372,12 +341,12 @@ export default function ModelViewer({ onSave, selectedColor, intensity }: Props)
         color: selectedColor,
         intensity: intensity
       };
-      
+
       addPainMarker(newMarker);
       setPainMarkers([...painMarkers, newMarker]);
     }
   }
-  
+
   function handlePointerUp() {
     setIsDrawing(false);
   }
@@ -385,7 +354,7 @@ export default function ModelViewer({ onSave, selectedColor, intensity }: Props)
   // Add visual representation of pain marker
   function addPainMarker(marker: PainMarker) {
     if (!sceneRef.current) return;
-    
+
     // Convert color string to actual color
     const colorMap: Record<string, number> = {
       RED: 0xff0000,
@@ -394,24 +363,24 @@ export default function ModelViewer({ onSave, selectedColor, intensity }: Props)
       YELLOW: 0xffff00,
       PURPLE: 0x800080
     };
-    
+
     const color = colorMap[marker.color] || 0xff0000;
-    
+
     // Size based on intensity (1-5)
     const size = 0.05 + (marker.intensity * 0.03);
-    
+
     // Create a sphere to represent the pain point
     const sphere = new THREE.Mesh(
       new THREE.SphereGeometry(size),
       new THREE.MeshBasicMaterial({ color })
     );
-    
+
     sphere.position.set(
       marker.position.x,
       marker.position.y,
       marker.position.z
     );
-    
+
     // Add marker to scene
     sceneRef.current.add(sphere);
   }
@@ -420,11 +389,11 @@ export default function ModelViewer({ onSave, selectedColor, intensity }: Props)
     onSave(painMarkers);
     // Clear markers after saving
     setPainMarkers([]);
-    
+
     // Remove visual markers from scene
     if (sceneRef.current) {
       sceneRef.current.children.forEach(child => {
-        if (child instanceof THREE.Mesh && 
+        if (child instanceof THREE.Mesh &&
             child.geometry instanceof THREE.SphereGeometry) {
           sceneRef.current?.remove(child);
         }
@@ -471,7 +440,7 @@ export default function ModelViewer({ onSave, selectedColor, intensity }: Props)
         )}
         <div ref={containerRef} className="w-full h-full touch-none" />
       </div>
-      
+
       {mode === 'mark' && painMarkers.length > 0 && (
         <div className="flex justify-end">
           <Button onClick={handleSave}>
