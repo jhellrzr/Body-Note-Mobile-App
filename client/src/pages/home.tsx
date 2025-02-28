@@ -46,7 +46,7 @@ export default function HomePage() {
     },
   });
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>, source: 'camera' | 'upload') => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -66,7 +66,7 @@ export default function HomePage() {
         setImage(result);
         setIsModelImage(false);
         setMode('drawing');
-        trackEvent("started_funnel", { method: "upload" });
+        trackEvent("started_funnel", { method: source });
       }
     };
     reader.onerror = (error) => {
@@ -122,16 +122,13 @@ export default function HomePage() {
                   accept="image/*"
                   capture="environment"
                   id="camera-input"
-                  onChange={handleFileSelect}
+                  onChange={(e) => handleFileSelect(e, 'camera')}
                   className="absolute w-0 h-0 opacity-0"
                 />
                 <Button
                   className="w-full h-16"
                   variant="outline"
-                  onClick={() => {
-                    document.getElementById('camera-input')?.click();
-                    trackEvent("started_funnel", { method: "camera" });
-                  }}
+                  onClick={() => document.getElementById('camera-input')?.click()}
                 >
                   <Camera className="mr-2 h-6 w-6" />
                   {t('upload.takePhoto')}
@@ -143,16 +140,13 @@ export default function HomePage() {
                   type="file"
                   accept="image/*"
                   id="file-input"
-                  onChange={handleFileSelect}
+                  onChange={(e) => handleFileSelect(e, 'upload')}
                   className="absolute w-0 h-0 opacity-0"
                 />
                 <Button
                   className="w-full h-16"
                   variant="outline"
-                  onClick={() => {
-                    document.getElementById('file-input')?.click();
-                    trackEvent("started_funnel", { method: "upload" });
-                  }}
+                  onClick={() => document.getElementById('file-input')?.click()}
                 >
                   <Upload className="mr-2 h-6 w-6" />
                   {t('upload.uploadImage')}
@@ -212,7 +206,7 @@ export default function HomePage() {
                         type="file"
                         accept="image/*"
                         id="upload-different"
-                        onChange={handleFileSelect}
+                        onChange={(e) => handleFileSelect(e, 'upload')}
                         className="absolute w-0 h-0 opacity-0"
                       />
                       <Button
