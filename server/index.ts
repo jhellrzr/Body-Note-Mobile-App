@@ -1,30 +1,10 @@
 import express, { type Request, Response, NextFunction } from "express";
-import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import hpp from "hpp";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
-
-// Security: Add Helmet middleware for secure headers
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'", "*.replit.dev", "*.repl.co"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "*.replit.dev", "*.repl.co"],
-      styleSrc: ["'self'", "'unsafe-inline'", "*.replit.dev", "*.repl.co"],
-      imgSrc: ["'self'", "data:", "blob:", "*.replit.dev", "*.repl.co"],
-      connectSrc: ["'self'", "*.replit.dev", "*.repl.co"],
-      fontSrc: ["'self'", "*.replit.dev", "*.repl.co"],
-      objectSrc: ["'none'"],
-      mediaSrc: ["'self'"],
-      frameSrc: ["'self'", "*.replit.dev", "*.repl.co"],
-    },
-  },
-  crossOriginEmbedderPolicy: false,
-  crossOriginResourcePolicy: { policy: "cross-origin" }
-}));
 
 // Security: Rate limiting
 const limiter = rateLimit({
@@ -48,11 +28,7 @@ app.use((req, res, next) => {
 
   // Add security headers
   res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'SAMEORIGIN'); 
   res.setHeader('X-XSS-Protection', '1; mode=block');
-
-  // Strict Transport Security
-  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
 
   next();
 });
