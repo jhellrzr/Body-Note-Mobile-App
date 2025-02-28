@@ -8,12 +8,12 @@ interface Props {
 
 export default function ColorSelector({ value, onChange }: Props) {
   return (
-    <div className="grid grid-cols-5 gap-2">
+    <div className="flex flex-col space-y-2">
       {Object.entries(painTypes).map(([color, label]) => (
         <Button
           key={color}
           variant={value === color ? "default" : "outline"}
-          className={`h-20 relative overflow-hidden group`}
+          className="relative overflow-hidden group"
           onClick={() => onChange(color)}
           style={{
             backgroundColor: value === color ? color.toLowerCase() : 'transparent',
@@ -21,7 +21,7 @@ export default function ColorSelector({ value, onChange }: Props) {
             color: value === color ? 'white' : 'inherit'
           }}
         >
-          <div className="relative z-10 font-medium">
+          <div className="relative z-10 font-medium py-2">
             {label}
           </div>
           {value !== color && (
