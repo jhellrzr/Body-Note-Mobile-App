@@ -10,11 +10,11 @@
   "pain": {
     "types": {
       "title": "Pain Types",
-      "sharp": "Sharp",
-      "dull": "Dull",
-      "burning": "Burning",
-      "tingling": "Tingling",
-      "throbbing": "Throbbing"
+      "sharp": "Sharp Pain",
+      "dull": "Dull Pain",
+      "burning": "Burning Pain",
+      "stiffness": "Stiffness",
+      "numbness": "Numbness/Tingling"
     },
     "intensity": "Pain Intensity",
     "save": "Save Pain Points",

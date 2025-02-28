@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { painTypes } from "@shared/schema";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   value: string;
@@ -7,6 +8,8 @@ interface Props {
 }
 
 export default function ColorSelector({ value, onChange }: Props) {
+  const { t } = useTranslation();
+
   return (
     <div className="flex flex-col space-y-2">
       {Object.entries(painTypes).map(([color, label]) => (
@@ -23,7 +26,7 @@ export default function ColorSelector({ value, onChange }: Props) {
           }}
         >
           <div className="relative z-10 font-medium py-2">
-            {label}
+            {t(`pain.types.${label.toLowerCase()}`)}
           </div>
           {value !== color && (
             <div 

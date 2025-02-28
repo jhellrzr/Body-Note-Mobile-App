@@ -10,11 +10,11 @@
   "pain": {
     "types": {
       "title": "Tipos de Dolor",
-      "sharp": "Agudo",
-      "dull": "Sordo",
-      "burning": "Ardiente",
-      "tingling": "Hormigueo",
-      "throbbing": "Pulsante"
+      "sharp": "Dolor Agudo",
+      "dull": "Dolor Sordo",
+      "burning": "Dolor Ardiente",
+      "stiffness": "Rigidez",
+      "numbness": "Entumecimiento/Hormigueo"
     },
     "intensity": "Intensidad del Dolor",
     "save": "Guardar Puntos de Dolor",
