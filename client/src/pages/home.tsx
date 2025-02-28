@@ -30,15 +30,15 @@ export default function HomePage() {
   const [selectedPart, setSelectedPart] = useState<string | null>(null);
   const [selectedSide, setSelectedSide] = useState<string | null>(null);
   const { toast } = useToast();
-  const { trackEvent } = useAnalytics();
+  const { trackEvent } = useAnalytics;
 
   const mutation = useMutation({
     mutationFn: async (entry: Omit<PainEntry, "id" | "date">) => {
+      trackEvent.mutate({ eventName: "image_saved" });
       const res = await apiRequest("POST", "/api/pain-entries", entry);
       return res.json();
     },
     onSuccess: () => {
-      trackEvent("image_saved");
       toast({
         title: t('success'),
         description: t('pain.saveSuccess'),
@@ -68,7 +68,7 @@ export default function HomePage() {
         setImage(result);
         setIsModelImage(false);
         setMode('drawing');
-        trackEvent("started_funnel", { method: source });
+        trackEvent.mutate({ eventName: "started_funnel", metadata: { method: source } });
       }
     };
     reader.onerror = (error) => {
@@ -90,7 +90,7 @@ export default function HomePage() {
     setSelectedPart(part);
     setSelectedSide(side);
     setMode('drawing');
-    trackEvent("started_funnel", { method: "2d-model", part, side, view });
+    trackEvent.mutate({ eventName: "started_funnel", metadata: { method: "2d-model", part, side, view } });
   };
 
   const handleDrawingBack = () => {
@@ -169,7 +169,7 @@ export default function HomePage() {
                   variant="outline"
                   onClick={() => {
                     setMode('2d-model');
-                    trackEvent("started_funnel", { method: "2d-model" });
+                    trackEvent.mutate({ eventName: "started_funnel", metadata: { method: "2d-model" } });
                   }}
                 >
                   <Image className="mr-2 h-6 w-6" />
