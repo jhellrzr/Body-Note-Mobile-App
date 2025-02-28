@@ -83,6 +83,12 @@ export default function HomePage() {
         <CardContent className="p-6">
           {mode === 'upload' && (
             <div className="text-center space-y-4">
+              <div className="mb-6">
+                <h2 className="text-xl font-semibold mb-2">Track Your Pain Points</h2>
+                <p className="text-muted-foreground mb-4">
+                  Take a photo of the affected body part or use our anatomical models to precisely mark and track your pain locations.
+                </p>
+              </div>
               <div>
                 <input
                   type="file"

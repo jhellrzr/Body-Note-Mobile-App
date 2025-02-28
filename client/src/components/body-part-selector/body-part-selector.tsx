@@ -1,27 +1,32 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Lock } from "lucide-react";
 
 const BODY_PARTS = {
   hand: {
     name: "Hand/Wrist",
     sides: ["Left", "Right"],
-    views: ["Palm", "Back", "Side-In", "Side-Out"]
+    views: ["Palm", "Back", "Side-In", "Side-Out"],
+    available: true
   },
   ankle: {
     name: "Ankle",
     sides: ["Left", "Right"],
-    views: ["Front", "Back", "Side-In", "Side-Out"]
+    views: ["Front", "Back", "Side-In", "Side-Out"],
+    available: false
   },
   knee: {
     name: "Knee",
     sides: ["Left", "Right"],
-    views: ["Front", "Back", "Side-In", "Side-Out"]
+    views: ["Front", "Back", "Side-In", "Side-Out"],
+    available: false
   },
   back: {
     name: "Back",
     sides: null,
-    views: ["Full", "Upper", "Middle", "Lower"]
+    views: ["Full", "Upper", "Middle", "Lower"],
+    available: false
   }
 };
 
@@ -95,10 +100,17 @@ export default function BodyPartSelector({ onSelect, onBack }: Props) {
           <Button
             key={part}
             variant="outline"
-            className="h-24 text-lg"
-            onClick={() => setSelectedPart(part as BodyPart)}
+            className="h-24 text-lg relative"
+            onClick={() => data.available ? setSelectedPart(part as BodyPart) : null}
+            disabled={!data.available}
           >
             {data.name}
+            {!data.available && (
+              <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center">
+                <Lock className="w-6 h-6 mb-2" />
+                <span className="text-sm">Coming Soon</span>
+              </div>
+            )}
           </Button>
         ))}
       </div>
