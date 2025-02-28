@@ -1,10 +1,13 @@
 import { 
   painEntries, 
   emailSubscriptions,
+  analyticsEvents,
   type PainEntry, 
   type InsertPainEntry,
   type EmailSubscription, 
-  type InsertEmailSubscription 
+  type InsertEmailSubscription,
+  type InsertAnalyticsEvent,
+  type AnalyticsEvent 
 } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
@@ -20,6 +23,10 @@ export interface IStorage {
   verifyEmailSubscription(token: string): Promise<boolean>;
   getEmailSubscription(email: string): Promise<EmailSubscription | undefined>;
   isEmailSubscribed(email: string): Promise<boolean>;
+
+  // Analytics tracking methods
+  trackEvent(event: InsertAnalyticsEvent): Promise<AnalyticsEvent>;
+  getEvents(eventName?: string): Promise<AnalyticsEvent[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -79,6 +86,24 @@ export class DatabaseStorage implements IStorage {
   async isEmailSubscribed(email: string): Promise<boolean> {
     const subscription = await this.getEmailSubscription(email);
     return !!subscription?.isVerified;
+  }
+
+  async trackEvent(event: InsertAnalyticsEvent): Promise<AnalyticsEvent> {
+    const [result] = await db.insert(analyticsEvents)
+      .values({
+        ...event,
+        timestamp: new Date()
+      })
+      .returning();
+    return result;
+  }
+
+  async getEvents(eventName?: string): Promise<AnalyticsEvent[]> {
+    const query = db.select().from(analyticsEvents);
+    if (eventName) {
+      query.where(eq(analyticsEvents.eventName, eventName));
+    }
+    return query;
   }
 }
 

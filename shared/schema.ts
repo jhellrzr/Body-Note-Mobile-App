@@ -42,6 +42,16 @@ export const emailSubscriptions = pgTable("email_subscriptions", {
   lastUpdated: timestamp("last_updated").notNull().defaultNow()
 });
 
+// Analytics events table
+export const analyticsEvents = pgTable("analytics_events", {
+  id: serial("id").primaryKey(),
+  eventName: varchar("event_name", { length: 255 }).notNull(),
+  timestamp: timestamp("timestamp").notNull().defaultNow(),
+  metadata: json("metadata").$type<Record<string, any>>().default({}),
+  sessionId: varchar("session_id", { length: 64 }),
+  userAgent: text("user_agent")
+});
+
 export const insertPainEntrySchema = createInsertSchema(painEntries).omit({
   id: true,
   date: true
@@ -57,7 +67,14 @@ export const insertEmailSubscriptionSchema = createInsertSchema(emailSubscriptio
   verificationToken: true
 });
 
+export const insertAnalyticsEventSchema = createInsertSchema(analyticsEvents).omit({
+  id: true,
+  timestamp: true
+});
+
 export type InsertPainEntry = z.infer<typeof insertPainEntrySchema>;
 export type PainEntry = typeof painEntries.$inferSelect;
 export type EmailSubscription = typeof emailSubscriptions.$inferSelect;
 export type InsertEmailSubscription = z.infer<typeof insertEmailSubscriptionSchema>;
+export type AnalyticsEvent = typeof analyticsEvents.$inferSelect;
+export type InsertAnalyticsEvent = z.infer<typeof insertAnalyticsEventSchema>;

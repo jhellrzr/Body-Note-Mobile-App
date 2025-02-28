@@ -12,6 +12,7 @@ import BodyPartSelector from "@/components/body-part-selector/body-part-selector
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAnalytics } from "@/hooks/use-analytics";
 import type { PainEntry } from "@shared/schema";
 
 type Mode = 'upload' | 'model' | 'drawing' | '2d-model';
@@ -27,6 +28,7 @@ export default function HomePage() {
   const [selectedPart, setSelectedPart] = useState<string | null>(null);
   const [selectedSide, setSelectedSide] = useState<string | null>(null);
   const { toast } = useToast();
+  const { trackEvent } = useAnalytics();
 
   const mutation = useMutation({
     mutationFn: async (entry: Omit<PainEntry, "id" | "date">) => {
@@ -34,6 +36,7 @@ export default function HomePage() {
       return res.json();
     },
     onSuccess: () => {
+      trackEvent("image_saved");
       toast({
         title: t('success'),
         description: t('pain.saveSuccess'),
@@ -63,6 +66,7 @@ export default function HomePage() {
         setImage(result);
         setIsModelImage(false);
         setMode('drawing');
+        trackEvent("started_funnel", { method: "upload" });
       }
     };
     reader.onerror = (error) => {
@@ -84,6 +88,7 @@ export default function HomePage() {
     setSelectedPart(part);
     setSelectedSide(side);
     setMode('drawing');
+    trackEvent("started_funnel", { method: "2d-model", part, side, view });
   };
 
   const handleDrawingBack = () => {
@@ -123,7 +128,10 @@ export default function HomePage() {
                 <Button
                   className="w-full h-16"
                   variant="outline"
-                  onClick={() => document.getElementById('camera-input')?.click()}
+                  onClick={() => {
+                    document.getElementById('camera-input')?.click();
+                    trackEvent("started_funnel", { method: "camera" });
+                  }}
                 >
                   <Camera className="mr-2 h-6 w-6" />
                   {t('upload.takePhoto')}
@@ -141,7 +149,10 @@ export default function HomePage() {
                 <Button
                   className="w-full h-16"
                   variant="outline"
-                  onClick={() => document.getElementById('file-input')?.click()}
+                  onClick={() => {
+                    document.getElementById('file-input')?.click();
+                    trackEvent("started_funnel", { method: "upload" });
+                  }}
                 >
                   <Upload className="mr-2 h-6 w-6" />
                   {t('upload.uploadImage')}
@@ -152,7 +163,10 @@ export default function HomePage() {
                 <Button
                   className="w-full h-16"
                   variant="outline"
-                  onClick={() => setMode('2d-model')}
+                  onClick={() => {
+                    setMode('2d-model');
+                    trackEvent("started_funnel", { method: "2d-model" });
+                  }}
                 >
                   <Image className="mr-2 h-6 w-6" />
                   {t('upload.use2DModel')}

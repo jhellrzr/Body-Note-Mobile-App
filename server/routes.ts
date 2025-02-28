@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer } from "http";
 import { storage } from "./storage";
-import { insertPainEntrySchema, insertEmailSubscriptionSchema } from "@shared/schema";
+import { insertPainEntrySchema, insertEmailSubscriptionSchema, insertAnalyticsEventSchema } from "@shared/schema";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 
@@ -107,6 +107,21 @@ export async function registerRoutes(app: Express) {
     } catch (error) {
       console.error('Error verifying subscription:', error);
       res.status(500).json({ error: "Failed to verify subscription" });
+    }
+  });
+
+  // Analytics tracking endpoint
+  app.post("/api/analytics", validateRequest(insertAnalyticsEventSchema), async (req, res) => {
+    try {
+      const event = await storage.trackEvent({
+        ...req.validatedData,
+        userAgent: req.headers['user-agent'],
+        sessionId: req.sessionID
+      });
+      res.json(event);
+    } catch (error) {
+      console.error('Error tracking analytics event:', error);
+      res.status(500).json({ error: "Failed to track event" });
     }
   });
 
