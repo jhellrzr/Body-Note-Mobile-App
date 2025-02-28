@@ -19,7 +19,9 @@
     "intensity": "Intensidad del Dolor",
     "save": "Guardar Puntos de Dolor",
     "clear": "Limpiar",
-    "saveToDevice": "Guardar en Dispositivo"
+    "saveToDevice": "Guardar en Dispositivo",
+    "saveSuccess": "Imagen guardada exitosamente",
+    "shareSuccess": "Imagen compartida exitosamente"
   },
   "modelViewer": {
     "loading": "Cargando modelo...",
@@ -33,5 +35,6 @@
     "title": "Historial de Dolor",
     "exportPDF": "Exportar PDF",
     "loading": "Cargando..."
-  }
+  },
+  "success": "Éxito"
 }

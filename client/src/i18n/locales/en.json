@@ -19,7 +19,9 @@
     "intensity": "Pain Intensity",
     "save": "Save Pain Points",
     "clear": "Clear",
-    "saveToDevice": "Save to Device"
+    "saveToDevice": "Save to Device",
+    "saveSuccess": "Image saved successfully",
+    "shareSuccess": "Image shared successfully"
   },
   "modelViewer": {
     "loading": "Loading model...",
@@ -33,5 +35,6 @@
     "title": "Pain History",
     "exportPDF": "Export PDF",
     "loading": "Loading..."
-  }
+  },
+  "success": "Success"
 }

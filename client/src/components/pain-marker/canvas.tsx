@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { painTypes } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 interface PainMarker {
   type: keyof typeof painTypes;
@@ -27,6 +28,7 @@ const colorMap = {
 };
 
 export default function PainMarkerCanvas({ image, color, intensity, brushSize }: Props) {
+  const { t } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [markers, setMarkers] = useState<PainMarker[]>([]);
@@ -278,8 +280,8 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize }:
           title: 'Pain Tracking Image',
         });
         toast({
-          title: "Success",
-          description: "Image shared successfully",
+          title: t('success'),
+          description: t('pain.shareSuccess'),
         });
         return;
       } catch (err) {
@@ -297,8 +299,8 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize }:
     URL.revokeObjectURL(url);
 
     toast({
-      title: "Success",
-      description: "Image saved successfully",
+      title: t('success'),
+      description: t('pain.saveSuccess'),
     });
   };
 
@@ -324,11 +326,11 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize }:
       </div>
       <div className="flex justify-end space-x-2">
         <Button variant="outline" onClick={handleClear}>
-          Clear
+          {t('pain.clear')}
         </Button>
         <Button onClick={handleSaveToDevice}>
           <Download className="mr-2 h-4 w-4" />
-          Save to Device
+          {t('pain.saveToDevice')}
         </Button>
       </div>
     </div>
