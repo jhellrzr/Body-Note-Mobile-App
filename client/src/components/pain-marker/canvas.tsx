@@ -17,6 +17,7 @@ interface Props {
   color: string;
   intensity: number;
   brushSize: number;
+  onSave: (markers: PainMarker[]) => void;
 }
 
 const colorMap = {
@@ -27,7 +28,7 @@ const colorMap = {
   PURPLE: '#8855cc'
 };
 
-export default function PainMarkerCanvas({ image, color, intensity, brushSize }: Props) {
+export default function PainMarkerCanvas({ image, color, intensity, brushSize, onSave }: Props) {
   const { t } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
@@ -36,87 +37,76 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize }:
   const [currentMarker, setCurrentMarker] = useState<PainMarker | null>(null);
   const [aspectRatio, setAspectRatio] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
-  const [loadingError, setLoadingError] = useState<string | null>(null);
+  const [loadingProgress, setLoadingProgress] = useState(0);
   const { toast } = useToast();
 
-  // Initialize image once
+  // Initialize canvas and image
   useEffect(() => {
-    if (!image) {
-      console.error("No image URL provided");
-      setLoadingError("No image URL provided");
-      setIsLoading(false);
-      return;
-    }
-
-    console.log("Starting to load image:", image);
-    setIsLoading(true);
-    setLoadingError(null);
-
-    // Cleanup previous image
-    if (imageRef.current) {
-      imageRef.current.onload = null;
-      imageRef.current.onerror = null;
-    }
-
-    const img = new Image();
-    imageRef.current = img;
-
-    img.onload = () => {
-      console.log("Image loaded successfully:", image);
-      const canvas = canvasRef.current;
-      if (!canvas) {
-        console.error("Canvas ref not available");
-        setLoadingError("Canvas initialization failed");
-        setIsLoading(false);
+    let mounted = true;
+    const setupCanvas = async () => {
+      if (!image) {
+        console.error("No image URL provided");
+        if (mounted) setIsLoading(false);
         return;
       }
 
-      const maxWidth = 800;
-      const scale = Math.min(1, maxWidth / img.width);
-      const width = img.width * scale;
-      const height = img.height * scale;
+      try {
+        setIsLoading(true);
+        setLoadingProgress(0);
 
-      canvas.width = width;
-      canvas.height = height;
-      setAspectRatio(width / height);
+        // Create and load image
+        const img = new Image();
+        const loadPromise = new Promise<void>((resolve, reject) => {
+          img.onload = () => resolve();
+          img.onerror = () => reject(new Error("Failed to load image"));
+        });
 
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        console.error("Failed to get canvas context");
-        setLoadingError("Canvas context initialization failed");
-        setIsLoading(false);
-        return;
+        img.src = image;
+        await loadPromise;
+
+        // Ensure we still have canvas after image load
+        const canvas = canvasRef.current;
+        if (!canvas || !mounted) return;
+
+        // Set canvas dimensions
+        const maxWidth = 800;
+        const scale = Math.min(1, maxWidth / img.width);
+        const width = img.width * scale;
+        const height = img.height * scale;
+
+        canvas.width = width;
+        canvas.height = height;
+
+        // Store refs and update state
+        imageRef.current = img;
+        if (mounted) {
+          setAspectRatio(width / height);
+          setLoadingProgress(100);
+
+          // Initial draw
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.clearRect(0, 0, width, height);
+            ctx.drawImage(img, 0, 0, width, height);
+          }
+        }
+      } catch (error) {
+        console.error("Error setting up canvas:", error);
+        if (mounted) {
+          toast({
+            title: t('error'),
+            description: t('pain.imageLoadError'),
+            variant: "destructive",
+          });
+        }
+      } finally {
+        if (mounted) setIsLoading(false);
       }
-
-      // Draw initial image
-      ctx.clearRect(0, 0, width, height);
-      ctx.drawImage(img, 0, 0, width, height);
-
-      setIsLoading(false);
-      console.log("Initial image draw complete");
     };
 
-    img.onerror = (error) => {
-      console.error("Error loading image:", error);
-      setLoadingError("Failed to load image");
-      setIsLoading(false);
-      toast({
-        title: t('error'),
-        description: t('pain.imageLoadError'),
-        variant: "destructive",
-      });
-    };
-
-    // Set image source after setting up event handlers
-    try {
-      img.src = image;
-    } catch (error) {
-      console.error("Error setting image source:", error);
-      setLoadingError("Invalid image source");
-      setIsLoading(false);
-    }
-
+    setupCanvas();
     return () => {
+      mounted = false;
       if (imageRef.current) {
         imageRef.current.onload = null;
         imageRef.current.onerror = null;
@@ -125,27 +115,25 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize }:
     };
   }, [image, t]);
 
+  // Drawing functions remain unchanged
   const drawImage = () => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
     const img = imageRef.current;
 
     if (!canvas || !ctx || !img) {
-      console.error("Missing required refs for drawing"); 
+      console.error("Missing required refs for drawing");
       return;
     }
 
-    // Clear and draw base image
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-    // Draw existing markers
     markers.forEach(marker => {
       if (marker.points.length < 2) return;
       drawLine(ctx, marker.points, marker.type, marker.intensity, marker.brushSize);
     });
 
-    // Draw current marker if exists
     if (currentMarker?.points.length && currentMarker.points.length > 1) {
       drawLine(ctx, currentMarker.points, currentMarker.type, currentMarker.intensity, currentMarker.brushSize);
     }
@@ -158,10 +146,12 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize }:
     intensity: number,
     size: number
   ) => {
+    if (points.length < 2) return;
+
     ctx.beginPath();
     ctx.moveTo(points[0].x, points[0].y);
 
-    ctx.strokeStyle = colorMap[color as keyof typeof colorMap];
+    ctx.strokeStyle = colorMap[color as keyof typeof colorMap] || '#ff0000';
     ctx.globalAlpha = 0.3 + (intensity / 5) * 0.7;
     ctx.lineWidth = size;
     ctx.lineCap = 'round';
@@ -175,6 +165,7 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize }:
     ctx.globalAlpha = 1;
   };
 
+  // Event handlers remain unchanged
   const getPointerPosition = (e: React.TouchEvent | React.MouseEvent) => {
     const canvas = canvasRef.current;
     if (!canvas) return null;
@@ -223,11 +214,9 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize }:
         points: [...prev.points, point]
       };
     });
-    drawImage();
   };
 
-  const stopDrawing = (e: React.TouchEvent | React.MouseEvent) => {
-    e.preventDefault();
+  const stopDrawing = () => {
     if (!isDrawing || !currentMarker) return;
 
     if (currentMarker.points.length > 1) {
@@ -242,6 +231,13 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize }:
     setMarkers([]);
     drawImage();
   };
+
+  // Effect to redraw when dependencies change
+  useEffect(() => {
+    if (!isLoading) {
+      drawImage();
+    }
+  }, [markers, currentMarker, isDrawing]);
 
   const createFinalImage = async () => {
     const canvas = canvasRef.current;
@@ -372,20 +368,13 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize }:
     });
   };
 
-  useEffect(() => {
-    drawImage();
-  }, [markers, color, intensity, brushSize]);
-
   return (
     <div className="space-y-4">
       <div className="w-full" style={{ paddingBottom: `${(1 / aspectRatio) * 100}%`, position: 'relative' }}>
         {isLoading ? (
-          <div className="absolute inset-0 flex items-center justify-center bg-muted rounded-lg">
-            <Loader2 className="h-8 w-8 animate-spin" />
-          </div>
-        ) : loadingError ? (
-          <div className="absolute inset-0 flex items-center justify-center bg-muted rounded-lg">
-            <p className="text-destructive">{loadingError}</p>
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-muted rounded-lg">
+            <Loader2 className="h-8 w-8 animate-spin mb-2" />
+            <div className="text-sm">Loading image... {Math.round(loadingProgress)}%</div>
           </div>
         ) : (
           <canvas
@@ -406,9 +395,9 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize }:
         <Button variant="outline" onClick={handleClear}>
           {t('pain.clear')}
         </Button>
-        <Button onClick={handleSaveToDevice}>
+        <Button onClick={() => onSave(markers)}>
           <Download className="mr-2 h-4 w-4" />
-          {t('pain.saveToDevice')}
+          {t('pain.save')}
         </Button>
       </div>
     </div>
