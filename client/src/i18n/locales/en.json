@@ -1,0 +1,37 @@
+{
+  "app": {
+    "name": "Body Note",
+    "tagline": "Pain Tracking Made Simple"
+  },
+  "nav": {
+    "language": "Language",
+    "gallery": "Gallery"
+  },
+  "pain": {
+    "types": {
+      "title": "Pain Types",
+      "sharp": "Sharp",
+      "dull": "Dull",
+      "burning": "Burning",
+      "tingling": "Tingling",
+      "throbbing": "Throbbing"
+    },
+    "intensity": "Pain Intensity",
+    "save": "Save Pain Points",
+    "clear": "Clear",
+    "saveToDevice": "Save to Device"
+  },
+  "modelViewer": {
+    "loading": "Loading model...",
+    "markPain": "Mark Pain",
+    "bodyParts": {
+      "hand": "Hand",
+      "knee": "Knee"
+    }
+  },
+  "gallery": {
+    "title": "Pain History",
+    "exportPDF": "Export PDF",
+    "loading": "Loading..."
+  }
+}

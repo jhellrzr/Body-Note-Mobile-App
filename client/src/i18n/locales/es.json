@@ -1,0 +1,37 @@
+{
+  "app": {
+    "name": "Body Note",
+    "tagline": "Seguimiento del Dolor Simplificado"
+  },
+  "nav": {
+    "language": "Idioma",
+    "gallery": "Galería"
+  },
+  "pain": {
+    "types": {
+      "title": "Tipos de Dolor",
+      "sharp": "Agudo",
+      "dull": "Sordo",
+      "burning": "Ardiente",
+      "tingling": "Hormigueo",
+      "throbbing": "Pulsante"
+    },
+    "intensity": "Intensidad del Dolor",
+    "save": "Guardar Puntos de Dolor",
+    "clear": "Limpiar",
+    "saveToDevice": "Guardar en Dispositivo"
+  },
+  "modelViewer": {
+    "loading": "Cargando modelo...",
+    "markPain": "Marcar Dolor",
+    "bodyParts": {
+      "hand": "Mano",
+      "knee": "Rodilla"
+    }
+  },
+  "gallery": {
+    "title": "Historial de Dolor",
+    "exportPDF": "Exportar PDF",
+    "loading": "Cargando..."
+  }
+}

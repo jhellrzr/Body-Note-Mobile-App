@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import Nav from "@/components/layout/nav";
 import Home from "@/pages/home";
 import NotFound from "@/pages/not-found";
+import "./i18n"; // Import i18n configuration
 
 function Router() {
   return (
