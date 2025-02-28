@@ -3,11 +3,11 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 export const painTypes = {
-  RED: "Sharp Pain",
-  BLUE: "Dull Pain",
-  YELLOW: "Burning Pain",
-  GREEN: "Stiffness",
-  PURPLE: "Numbness/Tingling"
+  RED: "sharp",
+  BLUE: "dull",
+  YELLOW: "burning",
+  GREEN: "stiffness",
+  PURPLE: "numbness"
 } as const;
 
 export interface PainMarker2D {

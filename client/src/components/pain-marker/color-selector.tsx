@@ -26,7 +26,7 @@ export default function ColorSelector({ value, onChange }: Props) {
           }}
         >
           <div className="relative z-10 font-medium py-2">
-            {t(`pain.types.${label.toLowerCase()}`)}
+            {t(`pain.types.${color.toLowerCase()}`)}
           </div>
           {value !== color && (
             <div 
