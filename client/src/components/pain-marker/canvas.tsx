@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Download, Loader2 } from "lucide-react";
+import { Download } from "lucide-react";
 import { painTypes } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
@@ -17,7 +17,6 @@ interface Props {
   color: string;
   intensity: number;
   brushSize: number;
-  onSave: (markers: PainMarker[]) => void;
 }
 
 const colorMap = {
@@ -28,88 +27,61 @@ const colorMap = {
   PURPLE: '#8855cc'
 };
 
-export default function PainMarkerCanvas({ image, color, intensity, brushSize, onSave }: Props) {
+export default function PainMarkerCanvas({ image, color, intensity, brushSize }: Props) {
   const { t } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [markers, setMarkers] = useState<PainMarker[]>([]);
   const [currentMarker, setCurrentMarker] = useState<PainMarker | null>(null);
   const [aspectRatio, setAspectRatio] = useState(1);
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadingProgress, setLoadingProgress] = useState(0);
   const { toast } = useToast();
 
   useEffect(() => {
-    let mounted = true;
-    let img: HTMLImageElement | null = null;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-    const initializeCanvas = () => {
-      console.log("Initializing canvas with image:", image);
-      setIsLoading(true);
-      setLoadingProgress(0);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
-      img = new Image();
+    const img = new Image();
+    img.src = image;
+    img.onload = () => {
+      const maxWidth = 800;
+      const scale = Math.min(1, maxWidth / img.width);
+      const width = img.width * scale;
+      const height = img.height * scale;
 
-      img.onload = () => {
-        console.log("Image loaded successfully");
-        if (!mounted) return;
+      // Set canvas dimensions
+      canvas.width = width;
+      canvas.height = height;
 
-        const canvas = canvasRef.current;
-        if (!canvas) {
-          console.error("Canvas reference not found");
-          return;
-        }
+      // Calculate and set aspect ratio
+      setAspectRatio(width / height);
 
-        // Set canvas dimensions
-        const maxWidth = 800;
-        const scale = Math.min(1, maxWidth / img!.width);
-        const width = img!.width * scale;
-        const height = img!.height * scale;
-
-        canvas.width = width;
-        canvas.height = height;
-        setAspectRatio(width / height);
-
-        // Draw image
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-          console.error("Could not get canvas context");
-          return;
-        }
-
-        ctx.clearRect(0, 0, width, height);
-        ctx.drawImage(img!, 0, 0, width, height);
-
-        setLoadingProgress(100);
-        setIsLoading(false);
-        console.log("Canvas initialized successfully");
-      };
-
-      img.onerror = (error) => {
-        console.error("Error loading image:", error);
-        if (!mounted) return;
-
-        toast({
-          title: t('error'),
-          description: t('pain.imageLoadError'),
-          variant: "destructive",
-        });
-        setIsLoading(false);
-      };
-
-      img.src = image;
+      // Draw image immediately
+      drawImage();
     };
+  }, [image]);
 
-    initializeCanvas();
+  const drawImage = () => {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext('2d');
+    if (!canvas || !ctx) return;
 
-    return () => {
-      mounted = false;
-      if (img) {
-        img.onload = null;
-        img.onerror = null;
-      }
-    };
-  }, [image, t]);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const img = new Image();
+    img.src = image;
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+    markers.forEach(marker => {
+      if (marker.points.length < 2) return;
+      drawLine(ctx, marker.points, marker.type, marker.intensity, marker.brushSize);
+    });
+
+    if (currentMarker?.points.length && currentMarker.points.length > 1) {
+      drawLine(ctx, currentMarker.points, currentMarker.type, currentMarker.intensity, currentMarker.brushSize);
+    }
+  };
 
   const drawLine = (
     ctx: CanvasRenderingContext2D,
@@ -118,12 +90,10 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
     intensity: number,
     size: number
   ) => {
-    if (points.length < 2) return;
-
     ctx.beginPath();
     ctx.moveTo(points[0].x, points[0].y);
 
-    ctx.strokeStyle = colorMap[color as keyof typeof colorMap] || '#ff0000';
+    ctx.strokeStyle = colorMap[color as keyof typeof colorMap];
     ctx.globalAlpha = 0.3 + (intensity / 5) * 0.7;
     ctx.lineWidth = size;
     ctx.lineCap = 'round';
@@ -136,45 +106,6 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
     ctx.stroke();
     ctx.globalAlpha = 1;
   };
-
-  const redrawCanvas = () => {
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext('2d');
-
-    if (!canvas || !ctx) {
-      console.error("Canvas or context not available for redraw");
-      return;
-    }
-
-    // Clear canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Draw base image
-    const img = new Image();
-    img.onload = () => {
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-      // Draw all markers
-      markers.forEach(marker => {
-        if (marker.points.length >= 2) {
-          drawLine(ctx, marker.points, marker.type, marker.intensity, marker.brushSize);
-        }
-      });
-
-      // Draw current marker if exists
-      if (currentMarker?.points.length && currentMarker.points.length >= 2) {
-        drawLine(ctx, currentMarker.points, currentMarker.type, currentMarker.intensity, currentMarker.brushSize);
-      }
-    };
-    img.src = image;
-  };
-
-  // Handle drawing
-  useEffect(() => {
-    if (!isLoading) {
-      redrawCanvas();
-    }
-  }, [markers, currentMarker, isLoading]);
 
   const getPointerPosition = (e: React.TouchEvent | React.MouseEvent) => {
     const canvas = canvasRef.current;
@@ -224,9 +155,11 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
         points: [...prev.points, point]
       };
     });
+    drawImage();
   };
 
-  const stopDrawing = () => {
+  const stopDrawing = (e: React.TouchEvent | React.MouseEvent) => {
+    e.preventDefault();
     if (!isDrawing || !currentMarker) return;
 
     if (currentMarker.points.length > 1) {
@@ -239,7 +172,7 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
 
   const handleClear = () => {
     setMarkers([]);
-    redrawCanvas();
+    drawImage();
   };
 
   const createFinalImage = async () => {
@@ -371,36 +304,33 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
     });
   };
 
+  useEffect(() => {
+    drawImage();
+  }, [markers, color, intensity, brushSize]);
+
   return (
     <div className="space-y-4">
       <div className="w-full" style={{ paddingBottom: `${(1 / aspectRatio) * 100}%`, position: 'relative' }}>
-        {isLoading ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-muted rounded-lg">
-            <Loader2 className="h-8 w-8 animate-spin mb-2" />
-            <div className="text-sm">Loading image... {Math.round(loadingProgress)}%</div>
-          </div>
-        ) : (
-          <canvas
-            ref={canvasRef}
-            onMouseDown={startDrawing}
-            onMouseMove={draw}
-            onMouseUp={stopDrawing}
-            onMouseLeave={stopDrawing}
-            onTouchStart={startDrawing}
-            onTouchMove={draw}
-            onTouchEnd={stopDrawing}
-            onTouchCancel={stopDrawing}
-            className="cursor-crosshair border rounded-lg touch-none absolute inset-0 w-full h-full"
-          />
-        )}
+        <canvas
+          ref={canvasRef}
+          onMouseDown={startDrawing}
+          onMouseMove={draw}
+          onMouseUp={stopDrawing}
+          onMouseLeave={stopDrawing}
+          onTouchStart={startDrawing}
+          onTouchMove={draw}
+          onTouchEnd={stopDrawing}
+          onTouchCancel={stopDrawing}
+          className="cursor-crosshair border rounded-lg touch-none absolute inset-0 w-full h-full"
+        />
       </div>
       <div className="flex justify-end space-x-2">
         <Button variant="outline" onClick={handleClear}>
           {t('pain.clear')}
         </Button>
-        <Button onClick={() => onSave(markers)}>
+        <Button onClick={handleSaveToDevice}>
           <Download className="mr-2 h-4 w-4" />
-          Download
+          {t('pain.saveToDevice')}
         </Button>
       </div>
     </div>
