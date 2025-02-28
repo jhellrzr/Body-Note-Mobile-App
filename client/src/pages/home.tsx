@@ -10,7 +10,7 @@ import BrushSizeSelector from "@/components/pain-marker/brush-size-selector";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { PainEntry, PainMarker, PainMarker2D, PainMarker3D } from "@shared/schema";
+import type { PainEntry } from "@shared/schema";
 
 type Mode = 'upload' | 'model' | 'drawing';
 
@@ -135,7 +135,7 @@ export default function Home() {
                 onSave={(markers) =>
                   mutation.mutate({
                     imageUrl: image,
-                    painMarkers: markers as PainMarker[],
+                    painMarkers: markers,
                     notes: "",
                   })
                 }
@@ -151,14 +151,19 @@ export default function Home() {
               <ModelViewer
                 onSave={(markers) =>
                   mutation.mutate({
-                    imageUrl: "",
-                    painMarkers: markers as PainMarker3D[],
+                    imageUrl: "", 
+                    painMarkers: markers,
                     notes: "",
                   })
                 }
                 selectedColor={selectedColor}
                 intensity={intensity}
               />
+              <div className="mt-4 space-y-4">
+                <ColorSelector value={selectedColor} onChange={setSelectedColor} />
+                <IntensitySelector value={intensity} onChange={setIntensity} />
+                <BrushSizeSelector value={brushSize} onChange={setBrushSize} />
+              </div>
               <div className="flex justify-end">
                 <Button variant="outline" onClick={() => setMode('upload')}>
                   Back
