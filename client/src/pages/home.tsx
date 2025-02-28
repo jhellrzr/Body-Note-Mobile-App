@@ -86,7 +86,7 @@ export default function HomePage() {
               <div className="mb-6">
                 <h2 className="text-xl font-semibold mb-2">Track Your Pain Points</h2>
                 <p className="text-muted-foreground mb-4">
-                  Take a photo of the affected body part or use our anatomical models to precisely mark and track your pain locations.
+                  Take a photo of the affected body part or use our anatomical models to precisely mark and track your pain.
                 </p>
               </div>
               <div>
@@ -170,16 +170,40 @@ export default function HomePage() {
                 >
                   Back
                 </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setImage(null);
-                    setMode('upload');
-                  }}
-                >
-                  <HomeIcon />
-                </Button>
+                <div className="flex space-x-2">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    id="upload-different"
+                    onChange={handleFileSelect}
+                    className="absolute w-0 h-0 opacity-0"
+                  />
+                  <Button
+                    variant="outline"
+                    onClick={() => document.getElementById('upload-different')?.click()}
+                  >
+                    <Upload className="mr-2 h-4 w-4" />
+                    Upload Different Picture
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setImage(null);
+                      setMode('upload');
+                    }}
+                  >
+                    <HomeIcon />
+                  </Button>
+                </div>
               </div>
+
+              <div className="bg-muted/50 p-4 rounded-lg mb-4">
+                <p className="text-sm text-muted-foreground">
+                  Mark the areas where you feel pain, then click "Save to Device" to download your annotated image. 
+                  Save multiple images over time to track how your pain changes.
+                </p>
+              </div>
+
               <PainMarkerCanvas
                 image={image}
                 color={selectedColor}
