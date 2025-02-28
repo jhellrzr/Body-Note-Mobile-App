@@ -22,6 +22,8 @@ export default function HomePage() {
   const [intensity, setIntensity] = useState(1);
   const [brushSize, setBrushSize] = useState(6);
   const [isModelImage, setIsModelImage] = useState(false);
+  const [selectedPart, setSelectedPart] = useState<string | null>(null);
+  const [selectedSide, setSelectedSide] = useState<string | null>(null);
   const { toast } = useToast();
 
   const mutation = useMutation({
@@ -77,7 +79,23 @@ export default function HomePage() {
     const imagePath = `/assets/body-parts/${part}/${sidePrefix}${view.toLowerCase()}.jpg`;
     setImage(imagePath);
     setIsModelImage(true);
+    setSelectedPart(part);
+    setSelectedSide(side);
     setMode('drawing');
+  };
+
+  const handleDrawingBack = () => {
+    if (isModelImage) {
+      setImage(null);
+      setMode('2d-model');
+      // Keep selectedPart and selectedSide state for returning to the correct view selection
+    } else {
+      setImage(null);
+      setIsModelImage(false);
+      setSelectedPart(null);
+      setSelectedSide(null);
+      setMode('upload');
+    }
   };
 
   return (
@@ -158,6 +176,8 @@ export default function HomePage() {
             <BodyPartSelector
               onSelect={handle2DModelSelect}
               onBack={() => setMode('upload')}
+              selectedPart={selectedPart}
+              selectedSide={selectedSide}
             />
           )}
 
@@ -166,10 +186,7 @@ export default function HomePage() {
               <div className="flex justify-between items-center mb-4">
                 <Button
                   variant="outline"
-                  onClick={() => {
-                    setImage(null);
-                    setMode(isModelImage ? '2d-model' : 'upload');
-                  }}
+                  onClick={handleDrawingBack}
                 >
                   Back
                 </Button>
@@ -197,6 +214,8 @@ export default function HomePage() {
                     onClick={() => {
                       setImage(null);
                       setIsModelImage(false);
+                      setSelectedPart(null);
+                      setSelectedSide(null);
                       setMode('upload');
                     }}
                   >

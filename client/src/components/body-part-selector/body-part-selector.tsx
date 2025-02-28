@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Lock } from "lucide-react";
@@ -35,11 +35,18 @@ type BodyPart = keyof typeof BODY_PARTS;
 interface Props {
   onSelect: (part: BodyPart, side: string | null, view: string) => void;
   onBack: () => void;
+  selectedPart?: string | null;
+  selectedSide?: string | null;
 }
 
-export default function BodyPartSelector({ onSelect, onBack }: Props) {
-  const [selectedPart, setSelectedPart] = useState<BodyPart | null>(null);
-  const [selectedSide, setSelectedSide] = useState<string | null>(null);
+export default function BodyPartSelector({ onSelect, onBack, selectedPart: initialPart, selectedSide: initialSide }: Props) {
+  const [selectedPart, setSelectedPart] = useState<BodyPart | null>(initialPart as BodyPart | null);
+  const [selectedSide, setSelectedSide] = useState<string | null>(initialSide);
+
+  useEffect(() => {
+    if (initialPart) setSelectedPart(initialPart as BodyPart);
+    if (initialSide) setSelectedSide(initialSide);
+  }, [initialPart, initialSide]);
 
   if (selectedPart && BODY_PARTS[selectedPart].sides && !selectedSide) {
     return (
@@ -82,10 +89,7 @@ export default function BodyPartSelector({ onSelect, onBack }: Props) {
             </Button>
           ))}
         </div>
-        <Button 
-          variant="outline" 
-          onClick={() => selectedSide ? setSelectedSide(null) : setSelectedPart(null)}
-        >
+        <Button variant="outline" onClick={() => setSelectedSide(null)}>
           Back to Side Selection
         </Button>
       </div>
