@@ -14,6 +14,8 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAnalytics } from "@/hooks/use-analytics";
 import type { PainEntry } from "@shared/schema";
+import type { PainMarker } from "@/components/pain-marker/canvas";
+
 
 type Mode = 'upload' | 'model' | 'drawing' | '2d-model';
 
@@ -102,6 +104,14 @@ export default function HomePage() {
       setSelectedSide(null);
       setMode('upload');
     }
+  };
+
+  const handleSave = (imageUrl: string, painMarkers: PainMarker[]) => {
+    mutation.mutate({
+      imageUrl,
+      painMarkers,
+      notes: '' // We could add a notes field later if needed
+    });
   };
 
   return (
@@ -246,6 +256,7 @@ export default function HomePage() {
                     color={selectedColor}
                     intensity={intensity}
                     brushSize={brushSize}
+                    onSave={handleSave}
                   />
                 </div>
                 <div className="mt-4 lg:mt-0 space-y-4">
