@@ -18,7 +18,8 @@ export default function ColorSelector({ value, onChange }: Props) {
           style={{
             backgroundColor: value === color ? color.toLowerCase() : 'transparent',
             borderColor: color.toLowerCase(),
-            color: value === color ? 'white' : 'inherit'
+            // Make text black for yellow when selected, white for others
+            color: value === color && color === 'YELLOW' ? 'black' : value === color ? 'white' : 'inherit'
           }}
         >
           <div className="relative z-10 font-medium py-2">
