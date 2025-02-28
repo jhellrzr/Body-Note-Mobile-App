@@ -50,23 +50,23 @@ const TUTORIAL_STEPS = [
     content: (
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 text-gray-900">
             <div className="w-4 h-4 rounded-full bg-red-500" />
             <span>Sharp/Stabbing</span>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 text-gray-900">
             <div className="w-4 h-4 rounded-full bg-blue-500" />
             <span>Dull/Aching</span>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 text-gray-900">
             <div className="w-4 h-4 rounded-full bg-yellow-500" />
             <span>Burning</span>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 text-gray-900">
             <div className="w-4 h-4 rounded-full bg-green-500" />
             <span>Tingling</span>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 text-gray-900">
             <div className="w-4 h-4 rounded-full bg-purple-500" />
             <span>Throbbing</span>
           </div>

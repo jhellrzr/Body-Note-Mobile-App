@@ -21,7 +21,7 @@ interface Props {
 const colorMap = {
   RED: '#ff4444',
   BLUE: '#4477ff',
-  YELLOW: '#ffa500', 
+  YELLOW: '#ffa500',
   GREEN: '#44bb44',
   PURPLE: '#8855cc'
 };
@@ -168,31 +168,66 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize }:
     if (!canvas) return null;
 
     const finalCanvas = document.createElement('canvas');
-    const legendHeight = 140; 
+    const headerHeight = 60;
+    const legendHeight = 140;
     finalCanvas.width = canvas.width;
-    finalCanvas.height = canvas.height + legendHeight;
+    finalCanvas.height = canvas.height + headerHeight + legendHeight;
 
     const ctx = finalCanvas.getContext('2d');
     if (!ctx) return null;
 
-    ctx.drawImage(canvas, 0, 0);
+    // Draw header background
+    ctx.fillStyle = '#EDF3FF'; // Light blue background
+    ctx.fillRect(0, 0, canvas.width, headerHeight);
 
+    // Draw logo
+    ctx.fillStyle = 'hsl(211, 90%, 45%)'; // Our primary blue
+    ctx.font = 'bold 24px system-ui';
+    ctx.textAlign = 'left';
+    const padding = 20;
+
+    // Draw heart icon
+    ctx.beginPath();
+    ctx.moveTo(padding + 12, 20);
+    ctx.bezierCurveTo(padding + 12, 18, padding + 10, 16, padding + 8, 16);
+    ctx.bezierCurveTo(padding + 4, 16, padding + 4, 20, padding + 4, 20);
+    ctx.bezierCurveTo(padding + 4, 24, padding + 8, 28, padding + 12, 30);
+    ctx.bezierCurveTo(padding + 16, 28, padding + 20, 24, padding + 20, 20);
+    ctx.bezierCurveTo(padding + 20, 20, padding + 20, 16, padding + 16, 16);
+    ctx.bezierCurveTo(padding + 14, 16, padding + 12, 18, padding + 12, 20);
+    ctx.fillStyle = 'hsl(211, 90%, 45%)';
+    ctx.fill();
+
+    // Draw app name
+    ctx.fillStyle = '#000000';
+    ctx.fillText('Body Note', padding + 30, 35);
+
+    // Draw tagline
+    ctx.font = '14px system-ui';
+    ctx.fillStyle = '#666666';
+    ctx.fillText('Pain Tracking Made Simple', padding + 30, 52);
+
+    // Draw the original canvas content
+    ctx.drawImage(canvas, 0, headerHeight);
+
+    // Draw legend background
     ctx.fillStyle = '#f3f4f6';
-    ctx.fillRect(0, canvas.height, canvas.width, legendHeight);
+    ctx.fillRect(0, headerHeight + canvas.height, canvas.width, legendHeight);
 
+    // Draw legend title
     ctx.fillStyle = '#000000';
     ctx.font = 'bold 16px system-ui';
     ctx.textAlign = 'center';
-    ctx.fillText('Pain Types', canvas.width / 2, canvas.height + 30);
+    ctx.fillText('Pain Types', canvas.width / 2, headerHeight + canvas.height + 30);
 
+    // Draw pain type legend
     const entries = Object.entries(painTypes);
-    const padding = 20;
     const availableWidth = canvas.width - (padding * 2);
     const itemSpacing = availableWidth / entries.length;
 
     entries.forEach(([color, label], index) => {
       const x = padding + (itemSpacing * index);
-      const y = canvas.height + 60;
+      const y = headerHeight + canvas.height + 60;
 
       ctx.fillStyle = colorMap[color as keyof typeof colorMap];
       ctx.fillRect(x, y, 15, 15);
@@ -203,10 +238,12 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize }:
       ctx.fillText(label, x + 20, y + 12);
     });
 
+    // Add footer text
     const date = new Date().toLocaleDateString();
     ctx.font = '12px system-ui';
     ctx.textAlign = 'right';
-    ctx.fillText(date, canvas.width - padding, canvas.height + legendHeight - 15);
+    ctx.fillStyle = '#666666';
+    ctx.fillText(`Made with ♥ in San Francisco • ${date}`, canvas.width - padding, headerHeight + canvas.height + legendHeight - 15);
 
     return finalCanvas;
   };
