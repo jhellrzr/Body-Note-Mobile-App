@@ -11,15 +11,15 @@ const app = express();
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", "data:", "blob:"],
-      connectSrc: ["'self'"],
-      fontSrc: ["'self'"],
+      defaultSrc: ["'self'", "*.replit.dev", "*.repl.co"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "*.replit.dev", "*.repl.co"],
+      styleSrc: ["'self'", "'unsafe-inline'", "*.replit.dev", "*.repl.co"],
+      imgSrc: ["'self'", "data:", "blob:", "*.replit.dev", "*.repl.co"],
+      connectSrc: ["'self'", "*.replit.dev", "*.repl.co"],
+      fontSrc: ["'self'", "*.replit.dev", "*.repl.co"],
       objectSrc: ["'none'"],
       mediaSrc: ["'self'"],
-      frameSrc: ["'none'"],
+      frameSrc: ["'self'", "*.replit.dev", "*.repl.co"],
     },
   },
   crossOriginEmbedderPolicy: false,
@@ -48,7 +48,7 @@ app.use((req, res, next) => {
 
   // Add security headers
   res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN'); 
   res.setHeader('X-XSS-Protection', '1; mode=block');
 
   // Strict Transport Security
