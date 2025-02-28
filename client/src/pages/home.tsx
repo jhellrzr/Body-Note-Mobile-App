@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Camera, Upload, Shapes, Lock, Image } from "lucide-react";
+import { Camera, Upload, Shapes, Lock, Image, HomeIcon } from "lucide-react";
 import PainMarkerCanvas from "@/components/pain-marker/canvas";
 import ModelViewer from "@/components/model-viewer/model-viewer";
 import ColorSelector from "@/components/pain-marker/color-selector";
@@ -11,11 +11,11 @@ import BodyPartSelector from "@/components/body-part-selector/body-part-selector
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { PainEntry } from "@shared/schema";
+import type { PainEntry, PainMarker } from "@shared/schema";
 
 type Mode = 'upload' | 'model' | 'drawing' | '2d-model';
 
-export default function Home() {
+export default function HomePage() {
   const [mode, setMode] = useState<Mode>('upload');
   const [image, setImage] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState<string>("RED");
@@ -159,10 +159,19 @@ export default function Home() {
                   variant="outline"
                   onClick={() => {
                     setImage(null);
-                    setMode('upload');
+                    setMode('2d-model');
                   }}
                 >
                   Back
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setImage(null);
+                    setMode('upload');
+                  }}
+                >
+                  <HomeIcon />
                 </Button>
               </div>
               <PainMarkerCanvas
@@ -170,7 +179,7 @@ export default function Home() {
                 color={selectedColor}
                 intensity={intensity}
                 brushSize={brushSize}
-                onSave={(markers) =>
+                onSave={(markers: PainMarker[]) =>
                   mutation.mutate({
                     imageUrl: image,
                     painMarkers: markers,
