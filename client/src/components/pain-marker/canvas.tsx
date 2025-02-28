@@ -115,7 +115,6 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
     };
   }, [image, t]);
 
-  // Drawing functions remain unchanged
   const drawImage = () => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
@@ -138,6 +137,13 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
       drawLine(ctx, currentMarker.points, currentMarker.type, currentMarker.intensity, currentMarker.brushSize);
     }
   };
+
+  // Effect to redraw when dependencies change
+  useEffect(() => {
+    if (!isLoading) {
+      drawImage();
+    }
+  }, [markers, currentMarker, isDrawing]);
 
   const drawLine = (
     ctx: CanvasRenderingContext2D,
@@ -165,7 +171,6 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
     ctx.globalAlpha = 1;
   };
 
-  // Event handlers remain unchanged
   const getPointerPosition = (e: React.TouchEvent | React.MouseEvent) => {
     const canvas = canvasRef.current;
     if (!canvas) return null;
@@ -232,7 +237,6 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
     drawImage();
   };
 
-  // Effect to redraw when dependencies change
   useEffect(() => {
     if (!isLoading) {
       drawImage();
@@ -397,7 +401,7 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
         </Button>
         <Button onClick={() => onSave(markers)}>
           <Download className="mr-2 h-4 w-4" />
-          {t('pain.save')}
+          Download
         </Button>
       </div>
     </div>
