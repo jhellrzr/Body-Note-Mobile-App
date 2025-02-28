@@ -1,18 +1,19 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Camera, Upload, Shapes } from "lucide-react";
+import { Camera, Upload, Shapes, Lock, Image } from "lucide-react";
 import PainMarkerCanvas from "@/components/pain-marker/canvas";
 import ModelViewer from "@/components/model-viewer/model-viewer";
 import ColorSelector from "@/components/pain-marker/color-selector";
 import IntensitySelector from "@/components/pain-marker/intensity-selector";
 import BrushSizeSelector from "@/components/pain-marker/brush-size-selector";
+import BodyPartSelector from "@/components/body-part-selector/body-part-selector";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { PainEntry } from "@shared/schema";
 
-type Mode = 'upload' | 'model' | 'drawing';
+type Mode = 'upload' | 'model' | 'drawing' | '2d-model';
 
 export default function Home() {
   const [mode, setMode] = useState<Mode>('upload');
@@ -69,6 +70,13 @@ export default function Home() {
     reader.readAsDataURL(file);
   };
 
+  const handle2DModelSelect = (part: string, view: string) => {
+    // TODO: Load the corresponding image based on part and view
+    const imagePath = `/assets/body-parts/${part}/${view.toLowerCase()}.png`;
+    setImage(imagePath);
+    setMode('drawing');
+  };
+
   return (
     <div className="max-w-2xl mx-auto">
       <Card>
@@ -116,13 +124,32 @@ export default function Home() {
                 <Button
                   className="w-full h-16"
                   variant="outline"
-                  onClick={() => setMode('model')}
+                  onClick={() => setMode('2d-model')}
                 >
+                  <Image className="mr-2 h-6 w-6" />
+                  Use 2D Model
+                </Button>
+              </div>
+
+              <div>
+                <Button
+                  className="w-full h-16"
+                  variant="outline"
+                  disabled
+                >
+                  <Lock className="mr-2 h-6 w-6" />
                   <Shapes className="mr-2 h-6 w-6" />
-                  Use 3D Model
+                  3D Model (Coming Soon)
                 </Button>
               </div>
             </div>
+          )}
+
+          {mode === '2d-model' && (
+            <BodyPartSelector
+              onSelect={handle2DModelSelect}
+              onBack={() => setMode('upload')}
+            />
           )}
 
           {mode === 'drawing' && image && (
@@ -154,32 +181,6 @@ export default function Home() {
               <ColorSelector value={selectedColor} onChange={setSelectedColor} />
               <IntensitySelector value={intensity} onChange={setIntensity} />
               <BrushSizeSelector value={brushSize} onChange={setBrushSize} />
-            </div>
-          )}
-
-          {mode === 'model' && (
-            <div className="space-y-4">
-              <ModelViewer
-                onSave={(markers) =>
-                  mutation.mutate({
-                    imageUrl: "",
-                    painMarkers: markers,
-                    notes: "",
-                  })
-                }
-                selectedColor={selectedColor}
-                intensity={intensity}
-              />
-              <div className="mt-4 space-y-4">
-                <ColorSelector value={selectedColor} onChange={setSelectedColor} />
-                <IntensitySelector value={intensity} onChange={setIntensity} />
-                <BrushSizeSelector value={brushSize} onChange={setBrushSize} />
-              </div>
-              <div className="flex justify-end">
-                <Button variant="outline" onClick={() => setMode('upload')}>
-                  Back
-                </Button>
-              </div>
             </div>
           )}
         </CardContent>
