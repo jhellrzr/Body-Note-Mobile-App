@@ -21,6 +21,7 @@ export default function HomePage() {
   const [selectedColor, setSelectedColor] = useState<string>("RED");
   const [intensity, setIntensity] = useState(1);
   const [brushSize, setBrushSize] = useState(6);
+  const [isModelImage, setIsModelImage] = useState(false);
   const { toast } = useToast();
 
   const mutation = useMutation({
@@ -56,6 +57,7 @@ export default function HomePage() {
       const result = e.target?.result;
       if (typeof result === 'string') {
         setImage(result);
+        setIsModelImage(false);
         setMode('drawing');
       }
     };
@@ -74,6 +76,7 @@ export default function HomePage() {
     const sidePrefix = side ? `${side.toLowerCase()}-` : '';
     const imagePath = `/assets/body-parts/${part}/${sidePrefix}${view.toLowerCase()}.jpg`;
     setImage(imagePath);
+    setIsModelImage(true);
     setMode('drawing');
   };
 
@@ -165,30 +168,36 @@ export default function HomePage() {
                   variant="outline"
                   onClick={() => {
                     setImage(null);
-                    setMode('2d-model');
+                    setIsModelImage(false);
+                    setMode(isModelImage ? '2d-model' : 'upload');
                   }}
                 >
                   Back
                 </Button>
                 <div className="flex items-center space-x-2">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    id="upload-different"
-                    onChange={handleFileSelect}
-                    className="absolute w-0 h-0 opacity-0"
-                  />
-                  <Button
-                    variant="outline"
-                    onClick={() => document.getElementById('upload-different')?.click()}
-                  >
-                    <Upload className="mr-2 h-4 w-4" />
-                    Reupload
-                  </Button>
+                  {!isModelImage && (
+                    <>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        id="upload-different"
+                        onChange={handleFileSelect}
+                        className="absolute w-0 h-0 opacity-0"
+                      />
+                      <Button
+                        variant="outline"
+                        onClick={() => document.getElementById('upload-different')?.click()}
+                      >
+                        <Upload className="mr-2 h-4 w-4" />
+                        Reupload
+                      </Button>
+                    </>
+                  )}
                   <Button
                     variant="outline"
                     onClick={() => {
                       setImage(null);
+                      setIsModelImage(false);
                       setMode('upload');
                     }}
                   >

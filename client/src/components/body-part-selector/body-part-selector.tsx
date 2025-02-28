@@ -7,19 +7,19 @@ const BODY_PARTS = {
   hand: {
     name: "Hand/Wrist",
     sides: ["Left", "Right"],
-    views: ["Palm", "Back", "Side-In", "Side-Out"],
+    views: ["Palm", "Back"],
     available: true
   },
   ankle: {
     name: "Ankle",
     sides: ["Left", "Right"],
-    views: ["Front", "Back", "Side-In", "Side-Out"],
+    views: ["Front", "Back"],
     available: false
   },
   knee: {
     name: "Knee",
     sides: ["Left", "Right"],
-    views: ["Front", "Back", "Side-In", "Side-Out"],
+    views: ["Front", "Back"],
     available: false
   },
   back: {
