@@ -16,6 +16,7 @@ interface Props {
   color: string;
   intensity: number;
   brushSize: number;
+  onSave: (markers: PainMarker[]) => void;
 }
 
 const colorMap = {
@@ -26,7 +27,7 @@ const colorMap = {
   PURPLE: '#800080'
 };
 
-export default function PainMarkerCanvas({ image, color, intensity, brushSize }: Props) {
+export default function PainMarkerCanvas({ image, color, intensity, brushSize, onSave }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [markers, setMarkers] = useState<PainMarker[]>([]);
@@ -163,109 +164,6 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize }:
     drawImage();
   };
 
-  const createFinalImage = async () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return null;
-
-    // Create a new canvas with extra height for the legend
-    const finalCanvas = document.createElement('canvas');
-    const legendHeight = 140; // Increased height for better spacing
-    finalCanvas.width = canvas.width;
-    finalCanvas.height = canvas.height + legendHeight;
-
-    const ctx = finalCanvas.getContext('2d');
-    if (!ctx) return null;
-
-    // Draw the original canvas content
-    ctx.drawImage(canvas, 0, 0);
-
-    // Draw legend background
-    ctx.fillStyle = '#f3f4f6';
-    ctx.fillRect(0, canvas.height, canvas.width, legendHeight);
-
-    // Draw legend title
-    ctx.fillStyle = '#000000';
-    ctx.font = 'bold 16px system-ui';
-    ctx.textAlign = 'center';
-    ctx.fillText('Pain Types', canvas.width / 2, canvas.height + 30);
-
-    // Calculate layout
-    const entries = Object.entries(painTypes);
-    const padding = 20;
-    const availableWidth = canvas.width - (padding * 2);
-    const itemSpacing = availableWidth / entries.length;
-
-    // Draw color squares and labels
-    entries.forEach(([color, label], index) => {
-      const x = padding + (itemSpacing * index);
-      const y = canvas.height + 60;
-
-      // Draw color square
-      ctx.fillStyle = colorMap[color as keyof typeof colorMap];
-      ctx.fillRect(x, y, 15, 15);
-
-      // Draw label
-      ctx.fillStyle = '#000000';
-      ctx.font = '14px system-ui';
-      ctx.textAlign = 'left';
-      ctx.fillText(label, x + 20, y + 12);
-    });
-
-    // Add timestamp
-    const date = new Date().toLocaleDateString();
-    ctx.font = '12px system-ui';
-    ctx.textAlign = 'right';
-    ctx.fillText(date, canvas.width - padding, canvas.height + legendHeight - 15);
-
-    return finalCanvas;
-  };
-
-  const handleSaveToDevice = async () => {
-    const finalCanvas = await createFinalImage();
-    if (!finalCanvas) return;
-
-    const blob = await new Promise<Blob>((resolve) => {
-      finalCanvas.toBlob((blob) => {
-        if (blob) resolve(blob);
-      }, 'image/png');
-    });
-
-    const timestamp = new Date().toISOString().slice(0, 10);
-    const filename = `pain-tracking-${timestamp}.png`;
-
-    // Try to use the Share API first (better for mobile)
-    if (navigator.share && navigator.canShare({ files: [new File([blob], filename)] })) {
-      try {
-        await navigator.share({
-          files: [new File([blob], filename)],
-          title: 'Pain Tracking Image',
-        });
-        toast({
-          title: "Success",
-          description: "Image shared successfully",
-        });
-        return;
-      } catch (err) {
-        console.log('Share failed, falling back to download');
-      }
-    }
-
-    // Fallback to download
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-
-    toast({
-      title: "Success",
-      description: "Image saved successfully",
-    });
-  };
-
   useEffect(() => {
     drawImage();
   }, [markers, color, intensity, brushSize]);
@@ -289,9 +187,14 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize }:
         <Button variant="outline" onClick={handleClear}>
           Clear
         </Button>
-        <Button onClick={handleSaveToDevice}>
-          <Download className="mr-2 h-4 w-4" />
-          Save to Device
+        <Button onClick={() => {
+          onSave(markers);
+          toast({
+            title: "Success",
+            description: "Pain markers saved successfully",
+          });
+        }}>
+          Save
         </Button>
       </div>
     </div>
