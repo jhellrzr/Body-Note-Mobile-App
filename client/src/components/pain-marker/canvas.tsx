@@ -365,7 +365,7 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
         </Button>
         <Button onClick={handleSaveToDevice}>
           <Download className="mr-2 h-4 w-4" />
-          {t('pain.saveToDevice')}
+          {t('pain.download')}
         </Button>
       </div>
     </div>
