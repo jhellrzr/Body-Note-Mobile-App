@@ -1,6 +1,5 @@
 import { useRef, useEffect, useState } from 'react';
 import * as THREE from 'three';
-import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { Switch } from "@/components/ui/switch";
@@ -9,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Hand, Loader } from 'lucide-react';
 
 interface Props {
-  onSave: (painMarkers: PainMarker[]) => void;
   selectedColor: string;
   intensity: number;
 }
@@ -20,7 +18,7 @@ interface PainMarker {
   intensity: number;
 }
 
-export default function ModelViewer({ onSave, selectedColor, intensity }: Props) {
+export default function ModelViewer({ selectedColor, intensity }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -35,6 +33,7 @@ export default function ModelViewer({ onSave, selectedColor, intensity }: Props)
   const [painMarkers, setPainMarkers] = useState<PainMarker[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
+  const animationFrameRef = useRef<number>();
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -76,39 +75,51 @@ export default function ModelViewer({ onSave, selectedColor, intensity }: Props)
     loadModel(modelType);
 
     // Animation loop
-    function animate() {
-      requestAnimationFrame(animate);
+    const animate = () => {
+      animationFrameRef.current = requestAnimationFrame(animate);
       if (controlsRef.current) controlsRef.current.update();
       if (rendererRef.current && cameraRef.current && sceneRef.current) {
         rendererRef.current.render(sceneRef.current, cameraRef.current);
       }
-    }
+    };
     animate();
 
     // Handle window resize
-    function handleResize() {
+    const handleResize = () => {
       if (!container || !camera || !renderer) return;
       const width = container.clientWidth;
       const height = container.clientHeight;
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
       renderer.setSize(width, height);
-    }
+    };
     window.addEventListener('resize', handleResize);
 
-    // Handle mouse/touch events
-    container.addEventListener('pointerdown', handlePointerDown);
-    container.addEventListener('pointermove', handlePointerMove);
-    container.addEventListener('pointerup', handlePointerUp);
-
     return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+
       if (rendererRef.current && rendererRef.current.domElement && container) {
         container.removeChild(rendererRef.current.domElement);
       }
+
       window.removeEventListener('resize', handleResize);
-      container.removeEventListener('pointerdown', handlePointerDown);
-      container.removeEventListener('pointermove', handlePointerMove);
-      container.removeEventListener('pointerup', handlePointerUp);
+
+      // Dispose of Three.js resources
+      if (sceneRef.current) {
+        sceneRef.current.traverse((object) => {
+          if (object instanceof THREE.Mesh) {
+            object.geometry.dispose();
+            if (object.material instanceof THREE.Material) {
+              object.material.dispose();
+            }
+          }
+        });
+      }
+
+      rendererRef.current?.dispose();
+      controlsRef.current?.dispose();
     };
   }, [modelType]);
 
@@ -123,75 +134,52 @@ export default function ModelViewer({ onSave, selectedColor, intensity }: Props)
       modelRef.current = null;
     }
 
-    // Create group for model
     const group = new THREE.Group();
+    scene.add(group);
 
     const loader = new GLTFLoader();
-    if (type === 'hand') {
-      setIsLoading(true);
-      loader.load(
-        '/models/hand.glb',
-        handleGLTFLoad,
-        handleLoadProgress,
-        handleLoadError
-      );
-    } else if (type === 'knee') {
-      setIsLoading(true);
-      loader.load(
-        '/models/knee.glb',
-        handleGLTFLoad,
-        handleLoadProgress,
-        handleLoadError
-      );
-    }
-  }
+    setIsLoading(true);
 
-  const handleGLTFLoad = (gltf: GLTF) => {
-    const model = gltf.scene;
-    model.scale.set(2, 2, 2);
-    model.position.set(0, 0, 0);
-    model.rotation.set(0, 0, 0);
+    loader.load(
+      `/models/${type}.glb`,
+      (gltf) => {
+        const model = gltf.scene;
+        model.scale.set(2, 2, 2);
+        model.position.set(0, 0, 0);
+        model.rotation.set(0, 0, 0);
 
-    model.traverse((child: THREE.Object3D) => {
-      if (child instanceof THREE.Mesh) {
-        child.userData.isSelectable = true;
+        model.traverse((child) => {
+          if (child instanceof THREE.Mesh) {
+            child.userData.isSelectable = true;
+            child.material = new THREE.MeshPhongMaterial({
+              color: 0xe0e0e0,
+              transparent: true,
+              opacity: 0.9,
+            });
+          }
+        });
 
-        if (child.material) {
-          child.material = new THREE.MeshPhongMaterial({
-            color: 0xe0e0e0,
-            transparent: true,
-            opacity: 0.9,
-          });
+        group.add(model);
+        modelRef.current = group;
+        setIsLoading(false);
+        setLoadingProgress(100);
+      },
+      (xhr) => {
+        setLoadingProgress((xhr.loaded / xhr.total) * 100);
+      },
+      () => {
+        console.error(`Error loading ${type} model`);
+        setIsLoading(false);
+        if (type === 'hand') {
+          createFallbackHandModel(group);
+        } else {
+          createFallbackKneeModel(group);
         }
       }
-    });
+    );
+  }
 
-    group.add(model);
-    scene.add(group);
-    modelRef.current = group;
-    setIsLoading(false);
-    setLoadingProgress(100);
-  };
-
-  const handleLoadProgress = (xhr: ProgressEvent) => {
-    setLoadingProgress((xhr.loaded / xhr.total) * 100);
-  };
-
-  const handleLoadError = (error: ErrorEvent) => {
-    console.error('Error loading model:', error);
-    setIsLoading(false);
-    if (type === 'hand') {
-      createFallbackHandModel(group, scene);
-    } else {
-      createFallbackKneeModel(group, scene);
-    }
-  };
-
-
-  // Fallback models in case GLB loading fails
-  function createFallbackHandModel(group: THREE.Group, scene: THREE.Scene) {
-    // Create a simple hand representation using primitive shapes
-    // Palm
+  function createFallbackHandModel(group: THREE.Group) {
     const palm = new THREE.Mesh(
       new THREE.BoxGeometry(1.2, 0.6, 0.2),
       new THREE.MeshPhongMaterial({
@@ -203,7 +191,6 @@ export default function ModelViewer({ onSave, selectedColor, intensity }: Props)
     palm.userData.isSelectable = true;
     group.add(palm);
 
-    // Fingers
     for (let i = 0; i < 5; i++) {
       const finger = new THREE.Mesh(
         new THREE.CylinderGeometry(0.1, 0.1, 0.8),
@@ -220,12 +207,10 @@ export default function ModelViewer({ onSave, selectedColor, intensity }: Props)
       group.add(finger);
     }
 
-    scene.add(group);
     modelRef.current = group;
   }
 
-  function createFallbackKneeModel(group: THREE.Group, scene: THREE.Scene) {
-    // Upper leg
+  function createFallbackKneeModel(group: THREE.Group) {
     const upperLeg = new THREE.Mesh(
       new THREE.CylinderGeometry(0.5, 0.5, 2),
       new THREE.MeshPhongMaterial({
@@ -238,7 +223,6 @@ export default function ModelViewer({ onSave, selectedColor, intensity }: Props)
     upperLeg.userData.isSelectable = true;
     group.add(upperLeg);
 
-    // Knee joint
     const knee = new THREE.Mesh(
       new THREE.SphereGeometry(0.6),
       new THREE.MeshPhongMaterial({
@@ -250,7 +234,6 @@ export default function ModelViewer({ onSave, selectedColor, intensity }: Props)
     knee.userData.isSelectable = true;
     group.add(knee);
 
-    // Lower leg
     const lowerLeg = new THREE.Mesh(
       new THREE.CylinderGeometry(0.4, 0.4, 2),
       new THREE.MeshPhongMaterial({
@@ -263,7 +246,6 @@ export default function ModelViewer({ onSave, selectedColor, intensity }: Props)
     lowerLeg.userData.isSelectable = true;
     group.add(lowerLeg);
 
-    scene.add(group);
     modelRef.current = group;
   }
 
@@ -385,21 +367,6 @@ export default function ModelViewer({ onSave, selectedColor, intensity }: Props)
     sceneRef.current.add(sphere);
   }
 
-  function handleSave() {
-    onSave(painMarkers);
-    // Clear markers after saving
-    setPainMarkers([]);
-
-    // Remove visual markers from scene
-    if (sceneRef.current) {
-      sceneRef.current.children.forEach(child => {
-        if (child instanceof THREE.Mesh &&
-            child.geometry instanceof THREE.SphereGeometry) {
-          sceneRef.current?.remove(child);
-        }
-      });
-    }
-  }
 
   return (
     <div className="space-y-4">
@@ -438,7 +405,11 @@ export default function ModelViewer({ onSave, selectedColor, intensity }: Props)
             <div className="text-sm">Loading model... {Math.round(loadingProgress)}%</div>
           </div>
         )}
-        <div ref={containerRef} className="w-full h-full touch-none" />
+        <div ref={containerRef} className="w-full h-full touch-none" 
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        />
       </div>
     </div>
   );

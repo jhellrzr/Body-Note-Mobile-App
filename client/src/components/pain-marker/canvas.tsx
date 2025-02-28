@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Download, Save } from "lucide-react";
+import { Download } from "lucide-react";
 import { painTypes } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
@@ -17,7 +17,6 @@ interface Props {
   color: string;
   intensity: number;
   brushSize: number;
-  onSave?: (markers: PainMarker[]) => void;
 }
 
 const colorMap = {
@@ -28,13 +27,14 @@ const colorMap = {
   PURPLE: '#8855cc'
 };
 
-export default function PainMarkerCanvas({ image, color, intensity, brushSize, onSave }: Props) {
+export default function PainMarkerCanvas({ image, color, intensity, brushSize }: Props) {
   const { t } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [markers, setMarkers] = useState<PainMarker[]>([]);
   const [currentMarker, setCurrentMarker] = useState<PainMarker | null>(null);
   const [aspectRatio, setAspectRatio] = useState(1);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -46,34 +46,41 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
 
     const img = new Image();
     img.src = image;
+
     img.onload = () => {
+      setImageLoaded(true);
       const maxWidth = 800;
       const scale = Math.min(1, maxWidth / img.width);
       const width = img.width * scale;
       const height = img.height * scale;
 
-      // Set canvas dimensions
       canvas.width = width;
       canvas.height = height;
-
-      // Calculate and set aspect ratio
       setAspectRatio(width / height);
-
-      // Draw image immediately
       drawImage();
+    };
+
+    img.onerror = () => {
+      toast({
+        title: t('error'),
+        description: t('pain.imageLoadError'),
+        variant: "destructive"
+      });
     };
   }, [image]);
 
   const drawImage = () => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
-    if (!canvas || !ctx) return;
+    if (!canvas || !ctx || !imageLoaded) return;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const img = new Image();
     img.src = image;
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
+    // Draw all markers in a single batch
+    ctx.save();
     markers.forEach(marker => {
       if (marker.points.length < 2) return;
       drawLine(ctx, marker.points, marker.type, marker.intensity, marker.brushSize);
@@ -82,6 +89,7 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
     if (currentMarker?.points.length && currentMarker.points.length > 1) {
       drawLine(ctx, currentMarker.points, currentMarker.type, currentMarker.intensity, currentMarker.brushSize);
     }
+    ctx.restore();
   };
 
   const drawLine = (
@@ -91,10 +99,12 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
     intensity: number,
     size: number
   ) => {
+    if (points.length < 2) return;
+
     ctx.beginPath();
     ctx.moveTo(points[0].x, points[0].y);
 
-    ctx.strokeStyle = colorMap[color as keyof typeof colorMap];
+    ctx.strokeStyle = colorMap[color as keyof typeof colorMap] || colorMap.RED;
     ctx.globalAlpha = 0.3 + (intensity / 5) * 0.7;
     ctx.lineWidth = size;
     ctx.lineCap = 'round';
@@ -105,7 +115,6 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
     }
 
     ctx.stroke();
-    ctx.globalAlpha = 1;
   };
 
   const getPointerPosition = (e: React.TouchEvent | React.MouseEvent) => {
@@ -156,7 +165,7 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
         points: [...prev.points, point]
       };
     });
-    drawImage();
+    requestAnimationFrame(drawImage);
   };
 
   const stopDrawing = (e: React.TouchEvent | React.MouseEvent) => {
@@ -171,18 +180,70 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
     setCurrentMarker(null);
   };
 
-  const handleSave = () => {
-    if (onSave) {
-      onSave(markers);
-      // Clear markers after saving
-      setMarkers([]);
-      drawImage();
-    }
-  };
-
   const handleClear = () => {
     setMarkers([]);
     drawImage();
+  };
+
+  useEffect(() => {
+    if (imageLoaded) {
+      drawImage();
+    }
+  }, [markers, imageLoaded]);
+
+  // Clean up canvas on unmount
+  useEffect(() => {
+    return () => {
+      const canvas = canvasRef.current;
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        ctx?.clearRect(0, 0, canvas.width, canvas.height);
+      }
+    };
+  }, []);
+
+  const handleSaveToDevice = async () => {
+    const finalCanvas = await createFinalImage();
+    if (!finalCanvas) return;
+
+    const blob = await new Promise<Blob>((resolve) => {
+      finalCanvas.toBlob((blob) => {
+        if (blob) resolve(blob);
+      }, 'image/png');
+    });
+
+    const timestamp = new Date().toISOString().slice(0, 10);
+    const filename = `pain-tracking-${timestamp}.png`;
+
+    if (navigator.share && navigator.canShare({ files: [new File([blob], filename)] })) {
+      try {
+        await navigator.share({
+          files: [new File([blob], filename)],
+          title: 'Pain Tracking Image',
+        });
+        toast({
+          title: t('success'),
+          description: t('pain.shareSuccess'),
+        });
+        return;
+      } catch (err) {
+        console.log('Share failed, falling back to download');
+      }
+    }
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: t('success'),
+      description: t('pain.saveSuccess'),
+    });
   };
 
   const createFinalImage = async () => {
@@ -270,53 +331,6 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
     return finalCanvas;
   };
 
-  const handleSaveToDevice = async () => {
-    const finalCanvas = await createFinalImage();
-    if (!finalCanvas) return;
-
-    const blob = await new Promise<Blob>((resolve) => {
-      finalCanvas.toBlob((blob) => {
-        if (blob) resolve(blob);
-      }, 'image/png');
-    });
-
-    const timestamp = new Date().toISOString().slice(0, 10);
-    const filename = `pain-tracking-${timestamp}.png`;
-
-    if (navigator.share && navigator.canShare({ files: [new File([blob], filename)] })) {
-      try {
-        await navigator.share({
-          files: [new File([blob], filename)],
-          title: 'Pain Tracking Image',
-        });
-        toast({
-          title: t('success'),
-          description: t('pain.shareSuccess'),
-        });
-        return;
-      } catch (err) {
-        console.log('Share failed, falling back to download');
-      }
-    }
-
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-
-    toast({
-      title: t('success'),
-      description: t('pain.saveSuccess'),
-    });
-  };
-
-  useEffect(() => {
-    drawImage();
-  }, [markers, color, intensity, brushSize]);
 
   return (
     <div className="space-y-4">
@@ -338,12 +352,6 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
         <Button variant="outline" onClick={handleClear}>
           {t('pain.clear')}
         </Button>
-        {onSave && markers.length > 0 && (
-          <Button onClick={handleSave} variant="default">
-            <Save className="mr-2 h-4 w-4" />
-            {t('pain.save')}
-          </Button>
-        )}
         <Button onClick={handleSaveToDevice}>
           <Download className="mr-2 h-4 w-4" />
           {t('pain.saveToDevice')}
