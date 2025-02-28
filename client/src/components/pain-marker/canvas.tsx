@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
+import { Download, Save } from "lucide-react";
 import { painTypes } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
@@ -17,7 +17,7 @@ interface Props {
   color: string;
   intensity: number;
   brushSize: number;
-  onSave?: (markers: PainMarker[]) => void;  // Make onSave optional to match usage
+  onSave?: (markers: PainMarker[]) => void;
 }
 
 const colorMap = {
@@ -169,7 +169,15 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
 
     setIsDrawing(false);
     setCurrentMarker(null);
-    if (onSave) onSave(markers); // Call onSave if it exists
+  };
+
+  const handleSave = () => {
+    if (onSave) {
+      onSave(markers);
+      // Clear markers after saving
+      setMarkers([]);
+      drawImage();
+    }
   };
 
   const handleClear = () => {
@@ -330,6 +338,12 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
         <Button variant="outline" onClick={handleClear}>
           {t('pain.clear')}
         </Button>
+        {onSave && markers.length > 0 && (
+          <Button onClick={handleSave} variant="default">
+            <Save className="mr-2 h-4 w-4" />
+            {t('pain.save')}
+          </Button>
+        )}
         <Button onClick={handleSaveToDevice}>
           <Download className="mr-2 h-4 w-4" />
           {t('pain.saveToDevice')}
