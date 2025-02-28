@@ -5,8 +5,13 @@ import type { InsertAnalyticsEvent } from "@shared/schema";
 export function useAnalytics() {
   const trackEvent = useMutation({
     mutationFn: async (event: Omit<InsertAnalyticsEvent, "userAgent" | "sessionId">) => {
-      const res = await apiRequest("POST", "/api/analytics", event);
-      return res.json();
+      try {
+        const res = await apiRequest("POST", "/api/analytics", event);
+        return res.json();
+      } catch (error) {
+        console.error('Analytics tracking error:', error);
+        // Fail silently to not disrupt the user experience
+      }
     }
   });
 
