@@ -232,15 +232,21 @@ export default function HomePage() {
                 </p>
               </div>
 
-              <PainMarkerCanvas
-                image={image}
-                color={selectedColor}
-                intensity={intensity}
-                brushSize={brushSize}
-              />
-              <ColorSelector value={selectedColor} onChange={setSelectedColor} />
-              <IntensitySelector value={intensity} onChange={setIntensity} />
-              <BrushSizeSelector value={brushSize} onChange={setBrushSize} />
+              <div className="lg:grid lg:grid-cols-2 lg:gap-6">
+                <div>
+                  <PainMarkerCanvas
+                    image={image}
+                    color={selectedColor}
+                    intensity={intensity}
+                    brushSize={brushSize}
+                  />
+                </div>
+                <div className="mt-4 lg:mt-0 space-y-4">
+                  <ColorSelector value={selectedColor} onChange={setSelectedColor} />
+                  <IntensitySelector value={intensity} onChange={setIntensity} />
+                  <BrushSizeSelector value={brushSize} onChange={setBrushSize} />
+                </div>
+              </div>
             </div>
           )}
         </CardContent>
