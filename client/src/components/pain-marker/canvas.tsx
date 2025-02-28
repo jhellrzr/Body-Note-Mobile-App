@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Download, Save } from "lucide-react";
+import { Download } from "lucide-react";
 import { painTypes } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
@@ -17,7 +17,7 @@ interface Props {
   color: string;
   intensity: number;
   brushSize: number;
-  onSave?: (imageUrl: string, markers: PainMarker[]) => void; // Added onSave prop
+  onSave?: (imageUrl: string, markers: PainMarker[]) => void;
 }
 
 const colorMap = {
@@ -213,6 +213,16 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
       }, 'image/png');
     });
 
+    // If onSave prop is provided, call it with the base64 data
+    if (onSave) {
+      const reader = new FileReader();
+      reader.readAsDataURL(blob);
+      reader.onloadend = () => {
+        const base64data = reader.result as string;
+        onSave(base64data, markers);
+      };
+    }
+
     const timestamp = new Date().toISOString().slice(0, 10);
     const filename = `body note ${timestamp}.png`;
 
@@ -332,26 +342,6 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
     return finalCanvas;
   };
 
-  const handleSave = async () => {
-    if (!onSave) return;
-
-    const finalCanvas = await createFinalImage();
-    if (!finalCanvas) return;
-
-    const blob = await new Promise<Blob>((resolve) => {
-      finalCanvas.toBlob((blob) => {
-        if (blob) resolve(blob);
-      }, 'image/png');
-    });
-
-    // Convert blob to base64
-    const reader = new FileReader();
-    reader.readAsDataURL(blob);
-    reader.onloadend = () => {
-      const base64data = reader.result as string;
-      onSave(base64data, markers);
-    };
-  };
 
   return (
     <div className="space-y-4">
@@ -373,12 +363,6 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize, o
         <Button variant="outline" onClick={handleClear}>
           {t('pain.clear')}
         </Button>
-        {onSave && (
-          <Button onClick={handleSave}>
-            <Save className="mr-2 h-4 w-4" />
-            {t('pain.save')}
-          </Button>
-        )}
         <Button onClick={handleSaveToDevice}>
           <Download className="mr-2 h-4 w-4" />
           {t('pain.saveToDevice')}
