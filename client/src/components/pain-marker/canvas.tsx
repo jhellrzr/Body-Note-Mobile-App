@@ -213,13 +213,13 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize }:
     });
 
     const timestamp = new Date().toISOString().slice(0, 10);
-    const filename = `pain-tracking-${timestamp}.png`;
+    const filename = `body note ${timestamp}.png`;
 
     if (navigator.share && navigator.canShare({ files: [new File([blob], filename)] })) {
       try {
         await navigator.share({
           files: [new File([blob], filename)],
-          title: 'Pain Tracking Image',
+          title: 'Body Note Image',
         });
         toast({
           title: t('success'),
@@ -330,6 +330,7 @@ export default function PainMarkerCanvas({ image, color, intensity, brushSize }:
 
     return finalCanvas;
   };
+
 
 
   return (
