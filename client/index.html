@@ -3,9 +3,87 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Body Note - Pain Tracking Made Simple</title>
+    <style>
+      .app-loader {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #fff;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        transition: opacity 0.3s;
+      }
+
+      .app-loader.loaded {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .heart-loader {
+        width: 50px;
+        height: 50px;
+        position: relative;
+        animation: heartbeat 1.2s infinite;
+        margin-bottom: 16px;
+      }
+
+      .heart-loader::before,
+      .heart-loader::after {
+        content: "";
+        background: hsl(211, 90%, 45%);
+        width: 30px;
+        height: 50px;
+        border-radius: 25px 25px 0 0;
+        position: absolute;
+        transform: rotate(-45deg);
+        transform-origin: 0 100%;
+        left: 25px;
+      }
+
+      .heart-loader::after {
+        left: 0;
+        transform: rotate(45deg);
+        transform-origin: 100% 100%;
+      }
+
+      @keyframes heartbeat {
+        0% { transform: scale(0.8); }
+        5% { transform: scale(0.9); }
+        10% { transform: scale(0.8); }
+        15% { transform: scale(1); }
+        50% { transform: scale(0.8); }
+        100% { transform: scale(0.8); }
+      }
+
+      .loader-text {
+        color: hsl(211, 90%, 45%);
+        font-family: system-ui, -apple-system, sans-serif;
+        font-size: 16px;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
+    <div class="app-loader">
+      <div class="heart-loader"></div>
+      <span class="loader-text">Loading Body Note...</span>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      // Remove loader when app is ready
+      window.addEventListener('load', () => {
+        const loader = document.querySelector('.app-loader');
+        if (loader) {
+          loader.classList.add('loaded');
+          setTimeout(() => loader.remove(), 300);
+        }
+      });
+    </script>
   </body>
 </html>
