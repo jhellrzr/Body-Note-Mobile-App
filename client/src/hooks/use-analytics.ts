@@ -3,7 +3,7 @@ import { apiRequest } from "@/lib/queryClient";
 import type { InsertAnalyticsEvent } from "@shared/schema";
 
 export function useAnalytics() {
-  const trackEvent = useMutation({
+  const trackEventMutation = useMutation({
     mutationFn: async (event: Omit<InsertAnalyticsEvent, "userAgent" | "sessionId">) => {
       try {
         const res = await apiRequest("POST", "/api/analytics", event);
@@ -17,7 +17,7 @@ export function useAnalytics() {
 
   return {
     trackEvent: (eventName: string, metadata: Record<string, any> = {}) => {
-      trackEvent.mutate({
+      trackEventMutation.mutate({
         eventName,
         metadata
       });
