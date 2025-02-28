@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Camera, Upload, Shapes, Lock, Image, HomeIcon, Send } from "lucide-react";
+import { Camera, Upload, Shapes, Lock, Image, HomeIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import PainMarkerCanvas from "@/components/pain-marker/canvas";
 import ModelViewer from "@/components/model-viewer/model-viewer";
@@ -13,7 +12,7 @@ import BodyPartSelector from "@/components/body-part-selector/body-part-selector
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { PainEntry, PainMarker } from "@shared/schema";
+import type { PainEntry } from "@shared/schema";
 
 type Mode = 'upload' | 'model' | 'drawing' | '2d-model';
 
@@ -27,7 +26,6 @@ export default function HomePage() {
   const [isModelImage, setIsModelImage] = useState(false);
   const [selectedPart, setSelectedPart] = useState<string | null>(null);
   const [selectedSide, setSelectedSide] = useState<string | null>(null);
-  const [email, setEmail] = useState("");
   const { toast } = useToast();
 
   const mutation = useMutation({
@@ -43,27 +41,6 @@ export default function HomePage() {
       setImage(null);
       setMode('upload');
     },
-  });
-
-  const subscriptionMutation = useMutation({
-    mutationFn: async (email: string) => {
-      const res = await apiRequest("POST", "/api/subscribe", { email });
-      return res.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: t('success'),
-        description: t('subscription.checkEmail'),
-      });
-      setEmail("");
-    },
-    onError: (error: Error) => {
-      toast({
-        title: t('error'),
-        description: error.message,
-        variant: "destructive"
-      });
-    }
   });
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -113,7 +90,6 @@ export default function HomePage() {
     if (isModelImage) {
       setImage(null);
       setMode('2d-model');
-      // Keep selectedPart and selectedSide state for returning to the correct view selection
     } else {
       setImage(null);
       setIsModelImage(false);
@@ -123,21 +99,8 @@ export default function HomePage() {
     }
   };
 
-  const handleSubscribe = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email) {
-      toast({
-        title: t('error'),
-        description: t('subscription.emailRequired'),
-        variant: "destructive"
-      });
-      return;
-    }
-    subscriptionMutation.mutate(email);
-  };
-
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="max-w-2xl mx-auto">
       <Card>
         <CardContent className="p-6">
           {mode === 'upload' && (
@@ -285,32 +248,6 @@ export default function HomePage() {
               </div>
             </div>
           )}
-        </CardContent>
-      </Card>
-      <Card>
-        <CardContent className="p-6">
-          <div className="text-center">
-            <h2 className="text-xl font-semibold mb-2">{t('subscription.title', 'Stay Updated')}</h2>
-            <p className="text-muted-foreground mb-4">
-              {t('subscription.description', 'Subscribe to receive updates about new features and improvements.')}
-            </p>
-            <form onSubmit={handleSubscribe} className="flex gap-2">
-              <Input
-                type="email"
-                placeholder={t('subscription.emailPlaceholder', 'Enter your email')}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="flex-1"
-              />
-              <Button 
-                type="submit" 
-                disabled={subscriptionMutation.isPending}
-              >
-                <Send className="mr-2 h-4 w-4" />
-                {t('subscription.submit', 'Subscribe')}
-              </Button>
-            </form>
-          </div>
         </CardContent>
       </Card>
     </div>

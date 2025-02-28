@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import Nav from "@/components/layout/nav";
 import Home from "@/pages/home";
 import NotFound from "@/pages/not-found";
+import { SubscriptionButton } from "@/components/subscription-button";
 import "./i18n"; // Import i18n configuration
 
 function Router() {
@@ -24,6 +25,7 @@ function App() {
         <main className="container mx-auto px-4 py-8">
           <Router />
         </main>
+        <SubscriptionButton />
       </div>
       <Toaster />
     </QueryClientProvider>
