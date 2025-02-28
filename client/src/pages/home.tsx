@@ -200,7 +200,7 @@ export default function HomePage() {
               <div className="bg-muted/50 p-4 rounded-lg mb-4">
                 <p className="text-sm text-muted-foreground">
                   Mark the areas where you feel pain, then click "Save to Device" to download your annotated image. 
-                  Reupload.
+                  Take a new image each day to build a record of how your pain changes over time.
                 </p>
               </div>
 
