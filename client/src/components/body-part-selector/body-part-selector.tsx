@@ -86,7 +86,7 @@ export default function BodyPartSelector({ onSelect, onBack }: Props) {
           variant="outline" 
           onClick={() => selectedSide ? setSelectedSide(null) : setSelectedPart(null)}
         >
-          Back to {selectedSide ? 'Side Selection' : 'Body Parts'}
+          Back to Side Selection
         </Button>
       </div>
     );
