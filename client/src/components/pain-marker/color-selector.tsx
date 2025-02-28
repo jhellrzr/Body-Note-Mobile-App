@@ -12,7 +12,7 @@ export default function ColorSelector({ value, onChange }: Props) {
 
   return (
     <div className="flex flex-col space-y-2">
-      {Object.entries(painTypes).map(([color, label]) => (
+      {Object.entries(painTypes).map(([color, type]) => (
         <Button
           key={color}
           variant={value === color ? "default" : "outline"}
@@ -21,12 +21,11 @@ export default function ColorSelector({ value, onChange }: Props) {
           style={{
             backgroundColor: value === color ? color.toLowerCase() : 'transparent',
             borderColor: color.toLowerCase(),
-            // Make text black for yellow when selected, white for others
             color: value === color && color === 'YELLOW' ? 'black' : value === color ? 'white' : 'inherit'
           }}
         >
           <div className="relative z-10 font-medium py-2">
-            {t(`pain.types.${color.toLowerCase()}`)}
+            {t(`pain.types.${type}`)}
           </div>
           {value !== color && (
             <div 
