@@ -440,14 +440,6 @@ export default function ModelViewer({ onSave, selectedColor, intensity }: Props)
         )}
         <div ref={containerRef} className="w-full h-full touch-none" />
       </div>
-
-      {mode === 'mark' && painMarkers.length > 0 && (
-        <div className="flex justify-end">
-          <Button onClick={handleSave}>
-            Save Pain Points
-          </Button>
-        </div>
-      )}
     </div>
   );
 }
