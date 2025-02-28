@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, json } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, json, varchar, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -33,10 +33,31 @@ export const painEntries = pgTable("pain_entries", {
   notes: text("notes")
 });
 
+export const emailSubscriptions = pgTable("email_subscriptions", {
+  id: serial("id").primaryKey(),
+  email: varchar("email", { length: 255 }).notNull().unique(),
+  dateSubscribed: timestamp("date_subscribed").notNull().defaultNow(),
+  isVerified: boolean("is_verified").notNull().default(false),
+  verificationToken: varchar("verification_token", { length: 64 }),
+  lastUpdated: timestamp("last_updated").notNull().defaultNow()
+});
+
 export const insertPainEntrySchema = createInsertSchema(painEntries).omit({
   id: true,
   date: true
 });
 
+export const insertEmailSubscriptionSchema = createInsertSchema(emailSubscriptions, {
+  email: z.string().email("Invalid email format"),
+}).omit({
+  id: true,
+  dateSubscribed: true,
+  lastUpdated: true,
+  isVerified: true,
+  verificationToken: true
+});
+
 export type InsertPainEntry = z.infer<typeof insertPainEntrySchema>;
 export type PainEntry = typeof painEntries.$inferSelect;
+export type EmailSubscription = typeof emailSubscriptions.$inferSelect;
+export type InsertEmailSubscription = z.infer<typeof insertEmailSubscriptionSchema>;

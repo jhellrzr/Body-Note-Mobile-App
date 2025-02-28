@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer } from "http";
 import { storage } from "./storage";
-import { insertPainEntrySchema } from "@shared/schema";
+import { insertPainEntrySchema, insertEmailSubscriptionSchema } from "@shared/schema";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 
@@ -15,9 +15,9 @@ export async function registerRoutes(app: Express) {
       } catch (error) {
         if (error instanceof ZodError) {
           const validationError = fromZodError(error);
-          res.status(400).json({ 
-            error: "Validation failed", 
-            details: validationError.message 
+          res.status(400).json({
+            error: "Validation failed",
+            details: validationError.message
           });
         } else {
           next(error);
@@ -63,6 +63,50 @@ export async function registerRoutes(app: Express) {
     } catch (error) {
       console.error('Error fetching pain entry:', error);
       res.status(500).json({ error: "Failed to fetch pain entry" });
+    }
+  });
+
+  // Email subscription routes
+  app.post("/api/subscribe", validateRequest(insertEmailSubscriptionSchema), async (req, res) => {
+    try {
+      const existingSubscription = await storage.getEmailSubscription(req.validatedData.email);
+
+      if (existingSubscription) {
+        if (existingSubscription.isVerified) {
+          return res.status(400).json({ error: "Email already subscribed" });
+        } else {
+          // Resend verification email logic would go here
+          return res.status(200).json({ message: "Verification email resent" });
+        }
+      }
+
+      const subscription = await storage.createEmailSubscription(req.validatedData);
+
+      // Here you would send a verification email with the token
+      // We'll keep this part secure by not exposing the token in the response
+
+      res.status(201).json({
+        message: "Please check your email to verify your subscription",
+        email: subscription.email
+      });
+    } catch (error) {
+      console.error('Error creating subscription:', error);
+      res.status(500).json({ error: "Failed to process subscription" });
+    }
+  });
+
+  app.get("/api/verify-subscription/:token", async (req, res) => {
+    try {
+      const success = await storage.verifyEmailSubscription(req.params.token);
+
+      if (success) {
+        res.json({ message: "Email subscription verified successfully" });
+      } else {
+        res.status(400).json({ error: "Invalid or expired verification token" });
+      }
+    } catch (error) {
+      console.error('Error verifying subscription:', error);
+      res.status(500).json({ error: "Failed to verify subscription" });
     }
   });
 
