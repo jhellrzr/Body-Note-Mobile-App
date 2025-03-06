@@ -18,6 +18,7 @@ export function getBodyPartImage(part: string, side: string | null, view: string
 
   const key = `${part}-${side.toLowerCase()}-${view.toLowerCase()}` as BodyPartImageKey;
   console.log('Attempting to load image with key:', key); // Debug log
+  console.log('Available image paths:', bodyPartImages); // Debug log
 
   const imagePath = bodyPartImages[key];
   if (!imagePath) {
@@ -25,5 +26,6 @@ export function getBodyPartImage(part: string, side: string | null, view: string
     return "";
   }
 
+  console.log('Found image path:', imagePath); // Debug log
   return imagePath;
 }
