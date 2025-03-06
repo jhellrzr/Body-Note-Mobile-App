@@ -19,7 +19,7 @@ const BODY_PARTS: Record<string, BodyPartConfig> = {
     name: "Hand/Wrist",
     sides: ["Left", "Right"],
     views: ["Palm", "Back"],
-    available: false // Temporarily disabled until model is available
+    available: true // Temporarily disabled until model is available
   },
   achilles: {
     name: "Achilles Tendon",
@@ -73,29 +73,60 @@ export default function BodyPartSelector({ onSelect, onBack, selectedPart: initi
     if (selectedPart && (selectedPart in bodyPartModels)) {
       try {
         const modelPath = bodyPartModels[selectedPart as BodyPartModelKey]?.default;
+
+        // Add debugging
+        console.log("Selected part:", selectedPart);
+        console.log("Available models:", bodyPartModels);
+        console.log("Model path:", modelPath);
+        console.log("Loading image from path:", modelPath);
+
+        // Check if model path is null or undefined
+        if (!modelPath) {
+          setIsImageLoaded(false);
+          toast({
+            title: "error",
+            description: t('pain.imageLoadError', { 
+              part: BODY_PARTS[selectedPart].name 
+            }),
+            variant: "destructive"
+          });
+          return;
+        }
+
         const img = new Image();
         img.onload = () => {
+          console.log("Image loaded successfully:", modelPath);
           setIsImageLoaded(true);
           if (BODY_PARTS[selectedPart].singleView) {
             onSelect(selectedPart, null, BODY_PARTS[selectedPart].views[0]);
           }
         };
-        img.onerror = () => {
+
+        img.onerror = (e) => {
+          console.log("Failed to load image:", e);
+          console.log("Image path that failed:", modelPath);
           setIsImageLoaded(false);
-          const partName = BODY_PARTS[selectedPart].name;
           toast({
             title: "error",
-            description: `Failed to load ${partName} model`,
+            description: t('pain.imageLoadError', { 
+              part: BODY_PARTS[selectedPart].name 
+            }),
             variant: "destructive"
           });
         };
+
         img.src = modelPath;
       } catch (error) {
         console.error('Error loading model:', error);
         setIsImageLoaded(false);
+        toast({
+          title: "error",
+          description: t('pain.loadError', { error: String(error) }),
+          variant: "destructive"
+        });
       }
     }
-  }, [selectedPart, onSelect, toast]);
+  }, [selectedPart, onSelect, t, toast]);
 
   if (selectedPart && BODY_PARTS[selectedPart].sides && !selectedSide) {
     return (
