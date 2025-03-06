@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Lock } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { bodyPartModels, type BodyPartModelKey } from "./models";
@@ -19,7 +18,7 @@ const BODY_PARTS: Record<string, BodyPartConfig> = {
     name: "Hand/Wrist",
     sides: ["Left", "Right"],
     views: ["Palm", "Back"],
-    available: false // Temporarily disabled until model is available
+    available: false
   },
   achilles: {
     name: "Achilles Tendon",
@@ -70,22 +69,12 @@ export default function BodyPartSelector({ onSelect, onBack, selectedPart: initi
   }, [initialPart, initialSide]);
 
   useEffect(() => {
-    if (selectedPart && (selectedPart in bodyPartModels)) {
+    if (selectedPart && BODY_PARTS[selectedPart].available) {
       try {
-        const modelPath = bodyPartModels[selectedPart as BodyPartModelKey]?.default;
-
-        // Add debugging
-        console.log("Selected part:", selectedPart);
-        console.log("Available models:", bodyPartModels);
-        console.log("Model path:", modelPath);
-        console.log("Loading image from path:", modelPath);
-
-        // Check if model path is null or undefined
-        if (!modelPath) {
-          setIsImageLoaded(false);
+        if (!(selectedPart in bodyPartModels)) {
           toast({
             title: "error",
-            description: `Model not found for ${BODY_PARTS[selectedPart].name}`,
+            description: `Model not available for ${BODY_PARTS[selectedPart].name}`,
             variant: "destructive"
           });
           return;
@@ -93,31 +82,27 @@ export default function BodyPartSelector({ onSelect, onBack, selectedPart: initi
 
         const img = new Image();
         img.onload = () => {
-          console.log("Image loaded successfully:", modelPath);
           setIsImageLoaded(true);
           if (BODY_PARTS[selectedPart].singleView) {
             onSelect(selectedPart, null, BODY_PARTS[selectedPart].views[0]);
           }
         };
 
-        img.onerror = (e) => {
-          console.log("Failed to load image:", e);
-          console.log("Image path that failed:", modelPath);
+        img.onerror = () => {
           setIsImageLoaded(false);
           toast({
             title: "error",
-            description: `Failed to load ${BODY_PARTS[selectedPart].name} image`,
+            description: `Failed to load ${BODY_PARTS[selectedPart].name} model`,
             variant: "destructive"
           });
         };
 
-        img.src = modelPath;
+        img.src = bodyPartModels[selectedPart as BodyPartModelKey].default;
       } catch (error) {
         console.error('Error loading model:', error);
-        setIsImageLoaded(false);
         toast({
           title: "error",
-          description: `Error loading ${BODY_PARTS[selectedPart].name} model`,
+          description: `Unable to load ${BODY_PARTS[selectedPart].name} model`,
           variant: "destructive"
         });
       }
@@ -128,7 +113,7 @@ export default function BodyPartSelector({ onSelect, onBack, selectedPart: initi
     return (
       <div className="space-y-4">
         <h3 className="text-lg font-semibold mb-4">
-          {t('bodyParts.selectSide', { part: BODY_PARTS[selectedPart].name })}
+          Select {BODY_PARTS[selectedPart].name} Side
         </h3>
         <div className="grid grid-cols-2 gap-4">
           {BODY_PARTS[selectedPart].sides!.map((side) => (
@@ -138,12 +123,12 @@ export default function BodyPartSelector({ onSelect, onBack, selectedPart: initi
               className="h-24 text-lg"
               onClick={() => setSelectedSide(side)}
             >
-              {t(`bodyParts.sides.${side.toLowerCase()}`)}
+              {side}
             </Button>
           ))}
         </div>
         <Button variant="outline" onClick={() => setSelectedPart(null)}>
-          {t('common.backToParts')}
+          Back to Body Parts
         </Button>
       </div>
     );
@@ -153,10 +138,7 @@ export default function BodyPartSelector({ onSelect, onBack, selectedPart: initi
     return (
       <div className="space-y-4">
         <h3 className="text-lg font-semibold mb-4">
-          {t('bodyParts.selectView', {
-            side: selectedSide ? t(`bodyParts.sides.${selectedSide.toLowerCase()}`) : '',
-            part: BODY_PARTS[selectedPart].name
-          })}
+          Select {selectedSide} {BODY_PARTS[selectedPart].name} View
         </h3>
         <div className="grid grid-cols-2 gap-4">
           {BODY_PARTS[selectedPart].views.map((view) => (
@@ -166,12 +148,12 @@ export default function BodyPartSelector({ onSelect, onBack, selectedPart: initi
               className="h-24 text-lg"
               onClick={() => onSelect(selectedPart, selectedSide, view)}
             >
-              {t(`bodyParts.views.${view.toLowerCase()}`)}
+              {view}
             </Button>
           ))}
         </div>
         <Button variant="outline" onClick={() => setSelectedSide(null)}>
-          {t('common.backToSides')}
+          Back to Side Selection
         </Button>
       </div>
     );
@@ -179,7 +161,7 @@ export default function BodyPartSelector({ onSelect, onBack, selectedPart: initi
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold mb-4">{t('bodyParts.selectPart')}</h3>
+      <h3 className="text-lg font-semibold mb-4">Select Body Part</h3>
       <div className="grid grid-cols-2 gap-4">
         {Object.entries(BODY_PARTS).map(([part, data]) => (
           <Button
@@ -193,14 +175,14 @@ export default function BodyPartSelector({ onSelect, onBack, selectedPart: initi
             {!data.available && (
               <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center">
                 <Lock className="w-6 h-6 mb-2" />
-                <span className="text-sm">{t('common.comingSoon')}</span>
+                <span className="text-sm">Coming Soon</span>
               </div>
             )}
           </Button>
         ))}
       </div>
       <Button variant="outline" onClick={onBack}>
-        {t('common.backToOptions')}
+        Back to Options
       </Button>
     </div>
   );
