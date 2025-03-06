@@ -83,8 +83,10 @@ export default function BodyPartSelector({ onSelect, onBack, selectedPart: initi
         img.onerror = () => {
           setIsImageLoaded(false);
           toast({
-            title: "Error",
-            description: t('pain.imageLoadError', { part: t(`bodyParts.parts.${selectedPart}`) }),
+            title: "error",
+            description: t('pain.imageLoadError', { 
+              part: BODY_PARTS[selectedPart].name 
+            }),
             variant: "destructive"
           });
         };
