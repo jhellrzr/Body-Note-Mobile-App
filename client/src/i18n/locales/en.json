@@ -47,6 +47,7 @@
     "parts": {
       "hand": "Hand/Wrist",
       "ankle": "Ankle",
+      "achilles": "Achilles Tendon",
       "knee": "Knee",
       "back": "Back"
     },
@@ -58,6 +59,7 @@
       "palm": "Palm",
       "back": "Back",
       "front": "Front",
+      "side": "Side",
       "full": "Full",
       "upper": "Upper",
       "middle": "Middle",
@@ -69,7 +71,8 @@
     "markPain": "Mark Pain",
     "bodyParts": {
       "hand": "Hand",
-      "knee": "Knee"
+      "knee": "Knee",
+      "achilles": "Achilles"
     }
   },
   "gallery": {

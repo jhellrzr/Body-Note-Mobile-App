@@ -17,6 +17,12 @@ const BODY_PARTS = {
     views: ["Front", "Back"],
     available: false
   },
+  achilles: {
+    name: "Achilles",
+    sides: ["Left", "Right"],
+    views: ["Side"],
+    available: true
+  },
   knee: {
     name: "Knee",
     sides: ["Left", "Right"],
