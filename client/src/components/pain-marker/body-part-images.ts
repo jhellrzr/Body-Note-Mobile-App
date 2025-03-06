@@ -4,8 +4,8 @@ export const bodyPartImages = {
   "hand-left-back": "/images/hand-left-back.png",
   "hand-right-palm": "/images/hand-right-palm.png",
   "hand-right-back": "/images/hand-right-back.png",
-  "achilles-left-side": "/images/achilles-tendon.jpg",
-  "achilles-right-side": "/images/achilles-tendon.jpg"
+  "achilles-left-side": "/images/achilles.jpg",
+  "achilles-right-side": "/images/achilles.jpg"
 } as const;
 
 export type BodyPartImageKey = keyof typeof bodyPartImages;
