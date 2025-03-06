@@ -82,11 +82,10 @@ export default function BodyPartSelector({ onSelect, onBack, selectedPart: initi
         };
         img.onerror = () => {
           setIsImageLoaded(false);
+          const partName = BODY_PARTS[selectedPart].name;
           toast({
             title: "error",
-            description: t('pain.imageLoadError', { 
-              part: BODY_PARTS[selectedPart].name 
-            }),
+            description: `Failed to load ${partName} model`,
             variant: "destructive"
           });
         };
@@ -96,13 +95,13 @@ export default function BodyPartSelector({ onSelect, onBack, selectedPart: initi
         setIsImageLoaded(false);
       }
     }
-  }, [selectedPart, onSelect, t, toast]);
+  }, [selectedPart, onSelect, toast]);
 
   if (selectedPart && BODY_PARTS[selectedPart].sides && !selectedSide) {
     return (
       <div className="space-y-4">
         <h3 className="text-lg font-semibold mb-4">
-          {t('bodyParts.selectSide', { part: t(`bodyParts.parts.${selectedPart}`) })}
+          {t('bodyParts.selectSide', { part: BODY_PARTS[selectedPart].name })}
         </h3>
         <div className="grid grid-cols-2 gap-4">
           {BODY_PARTS[selectedPart].sides!.map((side) => (
@@ -129,7 +128,7 @@ export default function BodyPartSelector({ onSelect, onBack, selectedPart: initi
         <h3 className="text-lg font-semibold mb-4">
           {t('bodyParts.selectView', {
             side: selectedSide ? t(`bodyParts.sides.${selectedSide.toLowerCase()}`) : '',
-            part: t(`bodyParts.parts.${selectedPart}`)
+            part: BODY_PARTS[selectedPart].name
           })}
         </h3>
         <div className="grid grid-cols-2 gap-4">
@@ -163,7 +162,7 @@ export default function BodyPartSelector({ onSelect, onBack, selectedPart: initi
             onClick={() => data.available ? setSelectedPart(part as BodyPart) : null}
             disabled={!data.available}
           >
-            {t(`bodyParts.parts.${part}`)}
+            {data.name}
             {!data.available && (
               <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center">
                 <Lock className="w-6 h-6 mb-2" />
