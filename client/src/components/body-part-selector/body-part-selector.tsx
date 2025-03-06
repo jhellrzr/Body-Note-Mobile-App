@@ -11,6 +11,13 @@ const BODY_PARTS = {
     views: ["Palm", "Back"],
     available: true
   },
+  achilles: {
+    name: "Achilles Tendon",
+    sides: null,
+    views: ["Default"],
+    available: true,
+    singleView: true
+  },
   ankle: {
     name: "Ankle",
     sides: ["Left", "Right"],
@@ -50,6 +57,13 @@ export default function BodyPartSelector({ onSelect, onBack, selectedPart: initi
     if (initialSide) setSelectedSide(initialSide);
   }, [initialPart, initialSide]);
 
+  // If the selected part has a single view, directly select it
+  useEffect(() => {
+    if (selectedPart && BODY_PARTS[selectedPart].singleView) {
+      onSelect(selectedPart, null, BODY_PARTS[selectedPart].views[0]);
+    }
+  }, [selectedPart]);
+
   if (selectedPart && BODY_PARTS[selectedPart].sides && !selectedSide) {
     return (
       <div className="space-y-4">
@@ -75,7 +89,7 @@ export default function BodyPartSelector({ onSelect, onBack, selectedPart: initi
     );
   }
 
-  if (selectedPart) {
+  if (selectedPart && !BODY_PARTS[selectedPart].singleView) {
     return (
       <div className="space-y-4">
         <h3 className="text-lg font-semibold mb-4">

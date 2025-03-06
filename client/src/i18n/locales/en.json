@@ -48,7 +48,8 @@
       "hand": "Hand/Wrist",
       "ankle": "Ankle",
       "knee": "Knee",
-      "back": "Back"
+      "back": "Back",
+      "achilles": "Achilles Tendon"
     },
     "sides": {
       "left": "Left",
@@ -61,7 +62,8 @@
       "full": "Full",
       "upper": "Upper",
       "middle": "Middle",
-      "lower": "Lower"
+      "lower": "Lower",
+      "default": "Default"
     }
   },
   "modelViewer": {
@@ -69,7 +71,8 @@
     "markPain": "Mark Pain",
     "bodyParts": {
       "hand": "Hand",
-      "knee": "Knee"
+      "knee": "Knee",
+      "achilles": "Achilles Tendon"
     }
   },
   "gallery": {
