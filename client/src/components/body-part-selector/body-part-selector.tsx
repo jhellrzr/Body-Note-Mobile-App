@@ -19,7 +19,7 @@ const BODY_PARTS: Record<string, BodyPartConfig> = {
     name: "Hand/Wrist",
     sides: ["Left", "Right"],
     views: ["Palm", "Back"],
-    available: true // Temporarily disabled until model is available
+    available: false // Temporarily disabled until model is available
   },
   achilles: {
     name: "Achilles Tendon",
@@ -85,9 +85,7 @@ export default function BodyPartSelector({ onSelect, onBack, selectedPart: initi
           setIsImageLoaded(false);
           toast({
             title: "error",
-            description: t('pain.imageLoadError', { 
-              part: BODY_PARTS[selectedPart].name 
-            }),
+            description: `Model not found for ${BODY_PARTS[selectedPart].name}`,
             variant: "destructive"
           });
           return;
@@ -108,9 +106,7 @@ export default function BodyPartSelector({ onSelect, onBack, selectedPart: initi
           setIsImageLoaded(false);
           toast({
             title: "error",
-            description: t('pain.imageLoadError', { 
-              part: BODY_PARTS[selectedPart].name 
-            }),
+            description: `Failed to load ${BODY_PARTS[selectedPart].name} image`,
             variant: "destructive"
           });
         };
@@ -121,12 +117,12 @@ export default function BodyPartSelector({ onSelect, onBack, selectedPart: initi
         setIsImageLoaded(false);
         toast({
           title: "error",
-          description: t('pain.loadError', { error: String(error) }),
+          description: `Error loading ${BODY_PARTS[selectedPart].name} model`,
           variant: "destructive"
         });
       }
     }
-  }, [selectedPart, onSelect, t, toast]);
+  }, [selectedPart, onSelect, toast]);
 
   if (selectedPart && BODY_PARTS[selectedPart].sides && !selectedSide) {
     return (
