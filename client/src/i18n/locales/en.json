@@ -24,7 +24,8 @@
     "saveSuccess": "Image saved successfully",
     "shareSuccess": "Image shared successfully",
     "instructions": "Mark the areas where you feel pain, then click \"Save to Device\" to download your annotated image. Take a new image each day to build a record of how your pain changes over time.",
-    "trackDescription": "Take a photo of the affected body part or use our anatomical models to precisely mark and track your pain."
+    "trackDescription": "Take a photo of the affected body part or use our anatomical models to precisely mark and track your pain.",
+    "imageLoadError": "Failed to load {{part}} model"
   },
   "upload": {
     "takePhoto": "Take Photo",

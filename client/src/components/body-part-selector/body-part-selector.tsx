@@ -3,15 +3,23 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Lock } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { bodyPartModels } from "./models";
+import { bodyPartModels, type BodyPartModelKey } from "./models";
 import { useToast } from "@/hooks/use-toast";
 
-const BODY_PARTS = {
+type BodyPartConfig = {
+  name: string;
+  sides: string[] | null;
+  views: string[];
+  available: boolean;
+  singleView?: boolean;
+};
+
+const BODY_PARTS: Record<string, BodyPartConfig> = {
   hand: {
     name: "Hand/Wrist",
     sides: ["Left", "Right"],
     views: ["Palm", "Back"],
-    available: true
+    available: false // Temporarily disabled until model is available
   },
   achilles: {
     name: "Achilles Tendon",
@@ -38,7 +46,7 @@ const BODY_PARTS = {
     views: ["Full", "Upper", "Middle", "Lower"],
     available: false
   }
-} as const;
+};
 
 type BodyPart = keyof typeof BODY_PARTS;
 
@@ -61,43 +69,32 @@ export default function BodyPartSelector({ onSelect, onBack, selectedPart: initi
     if (initialSide) setSelectedSide(initialSide);
   }, [initialPart, initialSide]);
 
-  // Debug logging for image paths
   useEffect(() => {
-    if (selectedPart) {
-      console.log('Selected part:', selectedPart);
-      console.log('Available models:', bodyPartModels);
+    if (selectedPart && (selectedPart in bodyPartModels)) {
       try {
-        const modelPath = bodyPartModels[selectedPart as keyof typeof bodyPartModels]?.default;
-        console.log('Model path:', modelPath);
-        console.log('Loading image from path:', modelPath);
-
-        // Test image loading
+        const modelPath = bodyPartModels[selectedPart as BodyPartModelKey]?.default;
         const img = new Image();
         img.onload = () => {
-          console.log('Image loaded successfully:', modelPath);
           setIsImageLoaded(true);
-          // Only call onSelect after image is loaded for single view parts
           if (BODY_PARTS[selectedPart].singleView) {
             onSelect(selectedPart, null, BODY_PARTS[selectedPart].views[0]);
           }
         };
-        img.onerror = (error) => {
-          console.error('Failed to load image:', error);
-          console.error('Image path that failed:', modelPath);
+        img.onerror = () => {
           setIsImageLoaded(false);
           toast({
-            title: "Error loading image",
-            description: `Failed to load ${selectedPart} model`,
+            title: "Error",
+            description: t('pain.imageLoadError', { part: t(`bodyParts.parts.${selectedPart}`) }),
             variant: "destructive"
           });
         };
         img.src = modelPath;
       } catch (error) {
-        console.error('Error accessing model:', error);
-        console.error('Full error details:', error);
+        console.error('Error loading model:', error);
+        setIsImageLoaded(false);
       }
     }
-  }, [selectedPart, onSelect]);
+  }, [selectedPart, onSelect, t, toast]);
 
   if (selectedPart && BODY_PARTS[selectedPart].sides && !selectedSide) {
     return (
