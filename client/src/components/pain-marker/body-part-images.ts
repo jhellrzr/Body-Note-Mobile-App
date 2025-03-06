@@ -11,10 +11,15 @@ export const bodyPartImages = {
 export type BodyPartImageKey = keyof typeof bodyPartImages;
 
 export function getBodyPartImage(part: string, side: string | null, view: string): string {
-  const key = `${part}-${side?.toLowerCase()}-${view.toLowerCase()}` as BodyPartImageKey;
-  const imagePath = bodyPartImages[key];
+  if (!part || !side || !view) {
+    console.error('Missing parameters:', { part, side, view });
+    return "";
+  }
 
-  // Add error handling and logging
+  const key = `${part}-${side.toLowerCase()}-${view.toLowerCase()}` as BodyPartImageKey;
+  console.log('Attempting to load image with key:', key); // Debug log
+
+  const imagePath = bodyPartImages[key];
   if (!imagePath) {
     console.error(`No image found for key: ${key}`);
     return "";
