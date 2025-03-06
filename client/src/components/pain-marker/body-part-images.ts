@@ -12,5 +12,13 @@ export type BodyPartImageKey = keyof typeof bodyPartImages;
 
 export function getBodyPartImage(part: string, side: string | null, view: string): string {
   const key = `${part}-${side?.toLowerCase()}-${view.toLowerCase()}` as BodyPartImageKey;
-  return bodyPartImages[key] || "";
+  const imagePath = bodyPartImages[key];
+
+  // Add error handling and logging
+  if (!imagePath) {
+    console.error(`No image found for key: ${key}`);
+    return "";
+  }
+
+  return imagePath;
 }
