@@ -38,7 +38,7 @@ const BODY_PARTS = {
     views: ["Full", "Upper", "Middle", "Lower"],
     available: false
   }
-};
+} as const;
 
 type BodyPart = keyof typeof BODY_PARTS;
 
@@ -53,7 +53,8 @@ export default function BodyPartSelector({ onSelect, onBack, selectedPart: initi
   const { t } = useTranslation();
   const { toast } = useToast();
   const [selectedPart, setSelectedPart] = useState<BodyPart | null>(initialPart as BodyPart | null);
-  const [selectedSide, setSelectedSide] = useState<string | null>(initialSide);
+  const [selectedSide, setSelectedSide] = useState<string | null>(initialSide || null);
+  const [isImageLoaded, setIsImageLoaded] = useState(false);
 
   useEffect(() => {
     if (initialPart) setSelectedPart(initialPart as BodyPart);
@@ -68,39 +69,35 @@ export default function BodyPartSelector({ onSelect, onBack, selectedPart: initi
       try {
         const modelPath = bodyPartModels[selectedPart as keyof typeof bodyPartModels]?.default;
         console.log('Model path:', modelPath);
+        console.log('Loading image from path:', modelPath);
 
         // Test image loading
         const img = new Image();
+        img.onload = () => {
+          console.log('Image loaded successfully:', modelPath);
+          setIsImageLoaded(true);
+          // Only call onSelect after image is loaded for single view parts
+          if (BODY_PARTS[selectedPart].singleView) {
+            onSelect(selectedPart, null, BODY_PARTS[selectedPart].views[0]);
+          }
+        };
         img.onerror = (error) => {
           console.error('Failed to load image:', error);
+          console.error('Image path that failed:', modelPath);
+          setIsImageLoaded(false);
           toast({
             title: "Error loading image",
-            description: `Failed to load ${selectedPart} model. Path: ${modelPath}`,
+            description: `Failed to load ${selectedPart} model`,
             variant: "destructive"
           });
         };
         img.src = modelPath;
       } catch (error) {
         console.error('Error accessing model:', error);
+        console.error('Full error details:', error);
       }
     }
-  }, [selectedPart]);
-
-  // If the selected part has a single view, directly select it
-  useEffect(() => {
-    if (selectedPart && BODY_PARTS[selectedPart].singleView) {
-      try {
-        onSelect(selectedPart, null, BODY_PARTS[selectedPart].views[0]);
-      } catch (error) {
-        console.error('Error in single view selection:', error);
-        toast({
-          title: "Error",
-          description: "Failed to select body part view",
-          variant: "destructive"
-        });
-      }
-    }
-  }, [selectedPart]);
+  }, [selectedPart, onSelect]);
 
   if (selectedPart && BODY_PARTS[selectedPart].sides && !selectedSide) {
     return (

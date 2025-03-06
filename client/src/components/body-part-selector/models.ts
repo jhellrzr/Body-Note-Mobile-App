@@ -1,5 +1,5 @@
 // Import body part images
-import achillesModel from '@/assets/models/achilles.jpg';
+import achillesModel from '../../assets/models/achilles.jpg';
 
 export const bodyPartModels = {
   achilles: {
