@@ -24,8 +24,7 @@
     "saveSuccess": "Image saved successfully",
     "shareSuccess": "Image shared successfully",
     "instructions": "Mark the areas where you feel pain, then click \"Save to Device\" to download your annotated image. Take a new image each day to build a record of how your pain changes over time.",
-    "trackDescription": "Take a photo of the affected body part or use our anatomical models to precisely mark and track your pain.",
-    "imageLoadError": "Failed to load {{part}} model"
+    "trackDescription": "Take a photo of the affected body part or use our anatomical models to precisely mark and track your pain."
   },
   "upload": {
     "takePhoto": "Take Photo",
@@ -49,8 +48,7 @@
       "hand": "Hand/Wrist",
       "ankle": "Ankle",
       "knee": "Knee",
-      "back": "Back",
-      "achilles": "Achilles Tendon"
+      "back": "Back"
     },
     "sides": {
       "left": "Left",
@@ -63,8 +61,7 @@
       "full": "Full",
       "upper": "Upper",
       "middle": "Middle",
-      "lower": "Lower",
-      "default": "Default"
+      "lower": "Lower"
     }
   },
   "modelViewer": {
@@ -72,8 +69,7 @@
     "markPain": "Mark Pain",
     "bodyParts": {
       "hand": "Hand",
-      "knee": "Knee",
-      "achilles": "Achilles Tendon"
+      "knee": "Knee"
     }
   },
   "gallery": {
