@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Lock } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { bodyPartModels } from "./models";
+import { useToast } from "@/hooks/use-toast";
 
 const BODY_PARTS = {
   hand: {
@@ -49,6 +51,7 @@ interface Props {
 
 export default function BodyPartSelector({ onSelect, onBack, selectedPart: initialPart, selectedSide: initialSide }: Props) {
   const { t } = useTranslation();
+  const { toast } = useToast();
   const [selectedPart, setSelectedPart] = useState<BodyPart | null>(initialPart as BodyPart | null);
   const [selectedSide, setSelectedSide] = useState<string | null>(initialSide);
 
@@ -57,10 +60,45 @@ export default function BodyPartSelector({ onSelect, onBack, selectedPart: initi
     if (initialSide) setSelectedSide(initialSide);
   }, [initialPart, initialSide]);
 
+  // Debug logging for image paths
+  useEffect(() => {
+    if (selectedPart) {
+      console.log('Selected part:', selectedPart);
+      console.log('Available models:', bodyPartModels);
+      try {
+        const modelPath = bodyPartModels[selectedPart as keyof typeof bodyPartModels]?.default;
+        console.log('Model path:', modelPath);
+
+        // Test image loading
+        const img = new Image();
+        img.onerror = (error) => {
+          console.error('Failed to load image:', error);
+          toast({
+            title: "Error loading image",
+            description: `Failed to load ${selectedPart} model. Path: ${modelPath}`,
+            variant: "destructive"
+          });
+        };
+        img.src = modelPath;
+      } catch (error) {
+        console.error('Error accessing model:', error);
+      }
+    }
+  }, [selectedPart]);
+
   // If the selected part has a single view, directly select it
   useEffect(() => {
     if (selectedPart && BODY_PARTS[selectedPart].singleView) {
-      onSelect(selectedPart, null, BODY_PARTS[selectedPart].views[0]);
+      try {
+        onSelect(selectedPart, null, BODY_PARTS[selectedPart].views[0]);
+      } catch (error) {
+        console.error('Error in single view selection:', error);
+        toast({
+          title: "Error",
+          description: "Failed to select body part view",
+          variant: "destructive"
+        });
+      }
     }
   }, [selectedPart]);
 
