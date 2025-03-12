@@ -74,14 +74,14 @@ export function ActivityLogForm({ open, onOpenChange }: Props) {
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent>
-        <div className="mx-auto w-full max-w-lg">
+      <DrawerContent className="max-h-[95vh] flex flex-col">
+        <div className="flex-1 overflow-y-auto">
           <DrawerHeader>
             <DrawerTitle>Log Daily Activity</DrawerTitle>
           </DrawerHeader>
 
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 p-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-4">
               <FormField
                 control={form.control}
                 name="date"
@@ -89,17 +89,18 @@ export function ActivityLogForm({ open, onOpenChange }: Props) {
                   <FormItem>
                     <FormLabel>Date</FormLabel>
                     <FormControl>
-                      <Calendar
-                        mode="single"
-                        selected={date}
-                        onSelect={(newDate) => {
-                          if (newDate) {
-                            setDate(newDate);
-                            field.onChange(format(newDate, 'yyyy-MM-dd'));
-                          }
-                        }}
-                        className="rounded-md border"
-                      />
+                      <div className="p-3 border rounded-lg bg-background">
+                        <Calendar
+                          mode="single"
+                          selected={date}
+                          onSelect={(newDate) => {
+                            if (newDate) {
+                              setDate(newDate);
+                              field.onChange(format(newDate, 'yyyy-MM-dd'));
+                            }
+                          }}
+                        />
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -184,20 +185,20 @@ export function ActivityLogForm({ open, onOpenChange }: Props) {
                   </FormItem>
                 )}
               />
-
-              <DrawerFooter>
-                <Button type="submit" className="w-full">
-                  Save Activity Log
-                </Button>
-                <DrawerClose asChild>
-                  <Button variant="outline" className="w-full">
-                    Cancel
-                  </Button>
-                </DrawerClose>
-              </DrawerFooter>
             </form>
           </Form>
         </div>
+
+        <DrawerFooter className="px-4 border-t">
+          <Button type="submit" className="w-full" onClick={form.handleSubmit(onSubmit)}>
+            Save Activity Log
+          </Button>
+          <DrawerClose asChild>
+            <Button variant="outline" className="w-full">
+              Cancel
+            </Button>
+          </DrawerClose>
+        </DrawerFooter>
       </DrawerContent>
     </Drawer>
   );
