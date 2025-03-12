@@ -1,4 +1,9 @@
+import { db } from "./db";
 import { 
+  painEntries,
+  emailSubscriptions,
+  analyticsEvents,
+  activityLogs,
   type PainEntry, 
   type InsertPainEntry,
   type EmailSubscription, 
@@ -8,8 +13,8 @@ import {
   type ActivityLog,
   type InsertActivityLog
 } from "@shared/schema";
+import { eq } from "drizzle-orm";
 
-// Temporary in-memory storage for development
 export interface IStorage {
   createPainEntry(entry: InsertPainEntry): Promise<PainEntry>;
   getPainEntries(): Promise<PainEntry[]>;
@@ -24,72 +29,74 @@ export interface IStorage {
   getActivityLogs(): Promise<ActivityLog[]>;
 }
 
-export class MemStorage implements IStorage {
-  private painEntries: PainEntry[] = [];
-  private emailSubscriptions: EmailSubscription[] = [];
-  private analyticsEvents: AnalyticsEvent[] = [];
-  private activityLogs: ActivityLog[] = [];
-  private nextId = 1;
-
+export class DatabaseStorage implements IStorage {
   async createActivityLog(log: InsertActivityLog): Promise<ActivityLog> {
-    const newLog: ActivityLog = {
+    const [newLog] = await db.insert(activityLogs).values({
       ...log,
-      id: this.nextId++,
       createdAt: new Date()
-    };
-    this.activityLogs.push(newLog);
+    }).returning();
     return newLog;
   }
 
   async getActivityLogs(): Promise<ActivityLog[]> {
-    return this.activityLogs;
+    return db.select().from(activityLogs).orderBy(activityLogs.createdAt);
   }
 
   async createPainEntry(entry: InsertPainEntry): Promise<PainEntry> {
-    const newEntry = {
+    const [newEntry] = await db.insert(painEntries).values({
       ...entry,
-      id: this.nextId++,
       date: new Date(),
       notes: entry.notes || null
-    };
-    this.painEntries.push(newEntry);
+    }).returning();
     return newEntry;
   }
 
   async getPainEntries(): Promise<PainEntry[]> {
-    return this.painEntries;
+    return db.select().from(painEntries);
   }
 
   async getPainEntry(id: number): Promise<PainEntry | undefined> {
-    return this.painEntries.find(entry => entry.id === id);
+    const [entry] = await db.select().from(painEntries).where(eq(painEntries.id, id));
+    return entry;
   }
 
   async createEmailSubscription(data: InsertEmailSubscription): Promise<EmailSubscription> {
-    const subscription = {
-      id: this.nextId++,
+    const [subscription] = await db.insert(emailSubscriptions).values({
       email: data.email,
       dateSubscribed: new Date(),
       isVerified: false,
       verificationToken: Math.random().toString(36).substring(2),
       lastUpdated: new Date()
-    };
-    this.emailSubscriptions.push(subscription);
+    }).returning();
     return subscription;
   }
 
   async verifyEmailSubscription(token: string): Promise<boolean> {
-    const subscription = this.emailSubscriptions.find(s => s.verificationToken === token);
+    const [subscription] = await db
+      .select()
+      .from(emailSubscriptions)
+      .where(eq(emailSubscriptions.verificationToken, token));
+
     if (subscription) {
-      subscription.isVerified = true;
-      subscription.verificationToken = null;
-      subscription.lastUpdated = new Date();
+      await db
+        .update(emailSubscriptions)
+        .set({
+          isVerified: true,
+          verificationToken: null,
+          lastUpdated: new Date()
+        })
+        .where(eq(emailSubscriptions.id, subscription.id));
       return true;
     }
     return false;
   }
 
   async getEmailSubscription(email: string): Promise<EmailSubscription | undefined> {
-    return this.emailSubscriptions.find(s => s.email === email);
+    const [subscription] = await db
+      .select()
+      .from(emailSubscriptions)
+      .where(eq(emailSubscriptions.email, email));
+    return subscription;
   }
 
   async isEmailSubscribed(email: string): Promise<boolean> {
@@ -98,25 +105,23 @@ export class MemStorage implements IStorage {
   }
 
   async trackEvent(event: InsertAnalyticsEvent): Promise<AnalyticsEvent> {
-    const newEvent = {
+    const [newEvent] = await db.insert(analyticsEvents).values({
       ...event,
-      id: this.nextId++,
       timestamp: new Date(),
-      metadata: event.metadata || null,
+      metadata: event.metadata || {},
       sessionId: event.sessionId || null,
       userAgent: event.userAgent || null
-    };
-    this.analyticsEvents.push(newEvent);
+    }).returning();
     return newEvent;
   }
 
   async getEvents(eventName?: string): Promise<AnalyticsEvent[]> {
     if (eventName) {
-      return this.analyticsEvents.filter(e => e.eventName === eventName);
+      return db.select().from(analyticsEvents).where(eq(analyticsEvents.eventName, eventName));
     }
-    return this.analyticsEvents;
+    return db.select().from(analyticsEvents);
   }
 }
 
-// Export an instance of MemStorage instead of DatabaseStorage
-export const storage = new MemStorage();
+// Export an instance of DatabaseStorage
+export const storage = new DatabaseStorage();

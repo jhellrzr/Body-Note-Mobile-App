@@ -39,11 +39,12 @@ export function ActivityLogForm({ open, onOpenChange }: Props) {
   const form = useForm<InsertActivityLog>({
     resolver: zodResolver(insertActivityLogSchema),
     defaultValues: {
-      date: new Date(),
+      date: format(new Date(), 'yyyy-MM-dd'),
       steps: undefined,
       activity: "",
       painLevel: undefined,
       symptoms: "",
+      notes: null
     },
   });
 
@@ -51,12 +52,18 @@ export function ActivityLogForm({ open, onOpenChange }: Props) {
     try {
       await apiRequest("/api/activity-logs", {
         method: "POST",
-        body: JSON.stringify(data),
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          ...data,
+          date: format(date, 'yyyy-MM-dd')
+        })
       });
-      
+
       // Invalidate and refetch
       queryClient.invalidateQueries({ queryKey: ["/api/activity-logs"] });
-      
+
       // Reset form and close drawer
       form.reset();
       onOpenChange(false);
@@ -72,7 +79,7 @@ export function ActivityLogForm({ open, onOpenChange }: Props) {
           <DrawerHeader>
             <DrawerTitle>Log Daily Activity</DrawerTitle>
           </DrawerHeader>
-          
+
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 p-4">
               <FormField
@@ -84,11 +91,11 @@ export function ActivityLogForm({ open, onOpenChange }: Props) {
                     <FormControl>
                       <Calendar
                         mode="single"
-                        selected={field.value}
-                        onSelect={(date) => {
-                          if (date) {
-                            field.onChange(date);
-                            setDate(date);
+                        selected={date}
+                        onSelect={(newDate) => {
+                          if (newDate) {
+                            setDate(newDate);
+                            field.onChange(format(newDate, 'yyyy-MM-dd'));
                           }
                         }}
                         className="rounded-md border"
@@ -110,6 +117,7 @@ export function ActivityLogForm({ open, onOpenChange }: Props) {
                         type="number"
                         placeholder="Number of steps"
                         {...field}
+                        value={field.value ?? ''}
                         onChange={(e) => field.onChange(e.target.valueAsNumber)}
                       />
                     </FormControl>
@@ -125,7 +133,11 @@ export function ActivityLogForm({ open, onOpenChange }: Props) {
                   <FormItem>
                     <FormLabel>Activity</FormLabel>
                     <FormControl>
-                      <Input placeholder="What activities did you do?" {...field} />
+                      <Input 
+                        placeholder="What activities did you do?" 
+                        {...field} 
+                        value={field.value ?? ''}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -146,6 +158,7 @@ export function ActivityLogForm({ open, onOpenChange }: Props) {
                         step={0.5}
                         placeholder="Pain level"
                         {...field}
+                        value={field.value ?? ''}
                         onChange={(e) => field.onChange(e.target.valueAsNumber)}
                       />
                     </FormControl>
@@ -164,6 +177,7 @@ export function ActivityLogForm({ open, onOpenChange }: Props) {
                       <Textarea
                         placeholder="Describe any symptoms or notes"
                         {...field}
+                        value={field.value ?? ''}
                       />
                     </FormControl>
                     <FormMessage />
