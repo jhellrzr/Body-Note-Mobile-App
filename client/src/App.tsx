@@ -4,6 +4,7 @@ import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
 import Nav from "@/components/layout/nav";
 import Home from "@/pages/home";
+import Dashboard from "@/pages/dashboard";
 import NotFound from "@/pages/not-found";
 import { SubscriptionButton } from "@/components/subscription-button";
 import "./i18n"; // Import i18n configuration
@@ -12,6 +13,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/dashboard" component={Dashboard} />
       <Route component={NotFound} />
     </Switch>
   );
