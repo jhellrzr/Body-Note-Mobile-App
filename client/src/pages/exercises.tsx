@@ -40,28 +40,30 @@ export default function Exercises() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Exercise Tracking</h1>
-        <Button>Log Workout</Button>
+      <div className="flex items-center justify-between space-x-4">
+        <h1 className="text-4xl font-bold tracking-tight">Exercise Tracking</h1>
+        <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white px-8">
+          Log Workout
+        </Button>
       </div>
 
       <div className="grid gap-6">
         {exercisesByCategory && Object.entries(exercisesByCategory).map(([category, exercises]) => (
-          <Card key={category} className="bg-white">
-            <CardHeader className="border-b">
-              <CardTitle className="text-xl">{category}</CardTitle>
+          <Card key={category} className="bg-white rounded-lg shadow-sm">
+            <CardHeader className="border-b bg-white">
+              <CardTitle className="text-xl font-semibold">{category}</CardTitle>
             </CardHeader>
             <CardContent className="divide-y">
               {exercises.map((exercise) => (
-                <div key={exercise.id} className="py-4 first:pt-0 last:pb-0">
+                <div key={exercise.id} className="py-4 first:pt-4 last:pb-4">
                   <div className="flex items-center justify-between">
                     <div className="space-y-1">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-3">
                         <Checkbox />
-                        <h3 className="font-medium">{exercise.name}</h3>
+                        <h3 className="font-medium text-gray-900">{exercise.name}</h3>
                       </div>
                       {exercise.description && (
-                        <p className="text-sm text-gray-500">{exercise.description}</p>
+                        <p className="text-sm text-gray-500 ml-7">{exercise.description}</p>
                       )}
                     </div>
                     <div className="flex items-center gap-4">
