@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer } from "http";
 import { storage } from "./storage";
-import { insertPainEntrySchema, insertEmailSubscriptionSchema, insertAnalyticsEventSchema } from "@shared/schema";
+import { insertPainEntrySchema, insertEmailSubscriptionSchema, insertAnalyticsEventSchema, insertActivityLogSchema } from "@shared/schema";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 
@@ -26,12 +26,32 @@ export async function registerRoutes(app: Express) {
     };
   };
 
+  // Activity Logs Routes
+  app.get("/api/activity-logs", async (_req, res) => {
+    try {
+      const logs = await storage.getActivityLogs();
+      res.json(logs);
+    } catch (error) {
+      console.error('Error fetching activity logs:', error);
+      res.status(500).json({ error: "Failed to fetch activity logs" });
+    }
+  });
+
+  app.post("/api/activity-logs", validateRequest(insertActivityLogSchema), async (req, res) => {
+    try {
+      const result = await storage.createActivityLog(req.validatedData);
+      res.json(result);
+    } catch (error) {
+      console.error('Error creating activity log:', error);
+      res.status(500).json({ error: "Failed to create activity log" });
+    }
+  });
+
   app.post("/api/pain-entries", validateRequest(insertPainEntrySchema), async (req, res) => {
     try {
       const result = await storage.createPainEntry(req.validatedData);
       res.json(result);
     } catch (error) {
-      // Security: Don't expose internal error details
       console.error('Error creating pain entry:', error);
       res.status(500).json({ error: "Failed to create pain entry" });
     }
@@ -49,7 +69,6 @@ export async function registerRoutes(app: Express) {
 
   app.get("/api/pain-entries/:id", async (req, res) => {
     try {
-      // Security: Validate id parameter
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
         return res.status(400).json({ error: "Invalid ID format" });
@@ -66,7 +85,6 @@ export async function registerRoutes(app: Express) {
     }
   });
 
-  // Email subscription routes
   app.post("/api/subscribe", validateRequest(insertEmailSubscriptionSchema), async (req, res) => {
     try {
       const existingSubscription = await storage.getEmailSubscription(req.validatedData.email);
@@ -75,15 +93,11 @@ export async function registerRoutes(app: Express) {
         if (existingSubscription.isVerified) {
           return res.status(400).json({ error: "Email already subscribed" });
         } else {
-          // Resend verification email logic would go here
           return res.status(200).json({ message: "Verification email resent" });
         }
       }
 
       const subscription = await storage.createEmailSubscription(req.validatedData);
-
-      // Here you would send a verification email with the token
-      // We'll keep this part secure by not exposing the token in the response
 
       res.status(201).json({
         message: "Please check your email to verify your subscription",
@@ -110,7 +124,6 @@ export async function registerRoutes(app: Express) {
     }
   });
 
-  // Analytics tracking endpoint
   app.post("/api/analytics", validateRequest(insertAnalyticsEventSchema), async (req, res) => {
     try {
       const event = await storage.trackEvent({
