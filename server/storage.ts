@@ -4,6 +4,8 @@ import {
   emailSubscriptions,
   analyticsEvents,
   activityLogs,
+  exerciseLogs,
+  exercises,
   type PainEntry, 
   type InsertPainEntry,
   type EmailSubscription, 
@@ -11,7 +13,9 @@ import {
   type InsertAnalyticsEvent,
   type AnalyticsEvent,
   type ActivityLog,
-  type InsertActivityLog
+  type InsertActivityLog,
+  type ExerciseLog,
+  type InsertExerciseLog
 } from "@shared/schema";
 import { eq } from "drizzle-orm";
 
@@ -28,6 +32,9 @@ export interface IStorage {
   createActivityLog(log: InsertActivityLog): Promise<ActivityLog>;
   getActivityLogs(): Promise<ActivityLog[]>;
   deleteActivityLog(id: number): Promise<boolean>;
+  createExerciseLog(log: InsertExerciseLog): Promise<ExerciseLog>;
+  getExerciseLogs(): Promise<ExerciseLog[]>;
+  updateExerciseLog(id: number, completed: boolean): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -49,6 +56,30 @@ export class DatabaseStorage implements IStorage {
       .where(eq(activityLogs.id, id))
       .returning();
     return !!deleted;
+  }
+
+  async createExerciseLog(log: InsertExerciseLog): Promise<ExerciseLog> {
+    const [newLog] = await db.insert(exerciseLogs).values({
+      ...log,
+      completed: false,
+      createdAt: new Date()
+    }).returning();
+    return newLog;
+  }
+
+  async getExerciseLogs(): Promise<ExerciseLog[]> {
+    return db.select()
+      .from(exerciseLogs)
+      .orderBy(exerciseLogs.date);
+  }
+
+  async updateExerciseLog(id: number, completed: boolean): Promise<boolean> {
+    const [updated] = await db
+      .update(exerciseLogs)
+      .set({ completed })
+      .where(eq(exerciseLogs.id, id))
+      .returning();
+    return !!updated;
   }
 
   async createPainEntry(entry: InsertPainEntry): Promise<PainEntry> {

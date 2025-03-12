@@ -10,10 +10,10 @@ import {
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { Plus, MoreHorizontal, Pencil, Trash2, Dumbbell } from "lucide-react";
 import { format } from "date-fns";
 import { Loader2 } from "lucide-react";
-import { type ActivityLog } from "@shared/schema";
+import { type ActivityLog, type ExerciseLog } from "@shared/schema";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { ActivityLogForm } from "@/components/activity-log-form";
 import {
@@ -23,12 +23,17 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 
 export default function Dashboard() {
   const [isAddingLog, setIsAddingLog] = useState(false);
   const queryClient = useQueryClient();
-  const { data: activityLogs, isLoading } = useQuery<ActivityLog[]>({
+  const [, setLocation] = useLocation();
+  const { data: activityLogs, isLoading: isLoadingActivity } = useQuery<ActivityLog[]>({
     queryKey: ["/api/activity-logs"],
+  });
+  const { data: exerciseLogs, isLoading: isLoadingExercises } = useQuery<ExerciseLog[]>({
+    queryKey: ["/api/exercise-logs"],
   });
   const { toast } = useToast();
 
@@ -60,12 +65,10 @@ export default function Dashboard() {
   };
 
   const handleEdit = (log: ActivityLog) => {
-    //Implementation for edit functionality would go here.  This is beyond the scope of the provided edit.
     console.log("Edit Log:", log);
   };
 
-
-  if (isLoading) {
+  if (isLoadingActivity || isLoadingExercises) {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -84,6 +87,12 @@ export default function Dashboard() {
     steps: log.steps || 0
   }));
 
+  // Get today's exercise summary
+  const today = new Date().toISOString().split('T')[0];
+  const todaysExercises = exerciseLogs?.filter(log => log.date === today) || [];
+  const completedExercises = todaysExercises.filter(log => log.completed).length;
+  const totalExercises = todaysExercises.length;
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -97,30 +106,70 @@ export default function Dashboard() {
         </Button>
       </div>
 
-      <Card className="bg-white rounded-lg shadow-sm">
-        <CardHeader className="border-b">
-          <CardTitle className="text-xl">Pain Level Trend</CardTitle>
-        </CardHeader>
-        <CardContent className="pt-6">
-          <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis domain={[0, 5]} ticks={[0, 1, 2, 3, 4, 5]} />
-                <Tooltip />
-                <Line 
-                  type="monotone" 
-                  dataKey="painLevel" 
-                  stroke="#ef4444" 
-                  strokeWidth={2}
-                  dot={{ fill: '#ef4444' }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card className="bg-white rounded-lg shadow-sm">
+          <CardHeader className="border-b">
+            <CardTitle className="text-xl">Pain Level Trend</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis domain={[0, 5]} ticks={[0, 1, 2, 3, 4, 5]} />
+                  <Tooltip />
+                  <Line 
+                    type="monotone" 
+                    dataKey="painLevel" 
+                    stroke="#ef4444" 
+                    strokeWidth={2}
+                    dot={{ fill: '#ef4444' }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white rounded-lg shadow-sm">
+          <CardHeader className="border-b flex flex-row items-center justify-between">
+            <CardTitle className="text-xl">Exercise Progress</CardTitle>
+            <Button
+              variant="outline"
+              onClick={() => setLocation("/exercises")}
+              className="gap-2"
+            >
+              <Dumbbell className="h-4 w-4" />
+              View Exercises
+            </Button>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <div className="space-y-4">
+              <div className="text-center">
+                <h3 className="text-2xl font-bold">{completedExercises}/{totalExercises}</h3>
+                <p className="text-sm text-muted-foreground">Exercises completed today</p>
+              </div>
+              {todaysExercises.length > 0 ? (
+                <div className="space-y-2">
+                  {todaysExercises.map(log => (
+                    <div key={log.id} className="flex items-center justify-between p-2 bg-muted rounded-lg">
+                      <span className="text-sm">{log.exerciseId}</span>
+                      <span className="text-sm font-medium">
+                        {log.completed ? "Completed" : "Pending"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-center text-sm text-muted-foreground">
+                  No exercises logged today
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       <Card className="bg-white rounded-lg shadow-sm">
         <CardHeader className="border-b">
