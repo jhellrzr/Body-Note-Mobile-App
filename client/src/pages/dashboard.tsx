@@ -27,31 +27,35 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-3xl font-bold">Recovery Dashboard</h1>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle>Activity Log</CardTitle>
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">Recovery Dashboard</h1>
+      </div>
+
+      <Card className="bg-white rounded-lg shadow-sm">
+        <CardHeader className="border-b">
+          <CardTitle className="text-xl">Activity Log</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Steps</TableHead>
-                <TableHead>Activity</TableHead>
-                <TableHead>Pain Level</TableHead>
-                <TableHead>Symptoms</TableHead>
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="w-[120px] font-semibold">Date</TableHead>
+                <TableHead className="font-semibold">Steps</TableHead>
+                <TableHead className="font-semibold">Activity</TableHead>
+                <TableHead className="font-semibold">Pain Level</TableHead>
+                <TableHead className="font-semibold">Symptoms</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {activityLogs?.map((log) => (
                 <TableRow key={log.id}>
-                  <TableCell>{format(new Date(log.date), 'MMM d, yyyy')}</TableCell>
-                  <TableCell>{log.steps?.toLocaleString()}</TableCell>
-                  <TableCell>{log.activity}</TableCell>
-                  <TableCell>{log.painLevel}</TableCell>
-                  <TableCell>{log.symptoms}</TableCell>
+                  <TableCell className="font-medium">
+                    {format(new Date(log.date), 'MMM d')}
+                  </TableCell>
+                  <TableCell>{log.steps?.toLocaleString() ?? '-'}</TableCell>
+                  <TableCell>{log.activity || '-'}</TableCell>
+                  <TableCell>{log.painLevel?.toFixed(1) ?? '-'}</TableCell>
+                  <TableCell>{log.symptoms || 'No symptoms'}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
