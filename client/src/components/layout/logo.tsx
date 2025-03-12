@@ -15,7 +15,7 @@ export default function Logo() {
             {t('app.name')}
           </span>
           <span className="text-xs text-muted-foreground leading-none">
-            {t('app.tagline')}
+            Track your recovery journey and manage your wellness
           </span>
         </div>
       </div>
