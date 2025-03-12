@@ -4,7 +4,9 @@ import {
   type EmailSubscription, 
   type InsertEmailSubscription,
   type InsertAnalyticsEvent,
-  type AnalyticsEvent 
+  type AnalyticsEvent,
+  type ActivityLog,
+  type InsertActivityLog
 } from "@shared/schema";
 
 // Temporary in-memory storage for development
@@ -18,19 +20,37 @@ export interface IStorage {
   isEmailSubscribed(email: string): Promise<boolean>;
   trackEvent(event: InsertAnalyticsEvent): Promise<AnalyticsEvent>;
   getEvents(eventName?: string): Promise<AnalyticsEvent[]>;
+  createActivityLog(log: InsertActivityLog): Promise<ActivityLog>;
+  getActivityLogs(): Promise<ActivityLog[]>;
 }
 
 export class MemStorage implements IStorage {
   private painEntries: PainEntry[] = [];
   private emailSubscriptions: EmailSubscription[] = [];
   private analyticsEvents: AnalyticsEvent[] = [];
+  private activityLogs: ActivityLog[] = [];
   private nextId = 1;
+
+  async createActivityLog(log: InsertActivityLog): Promise<ActivityLog> {
+    const newLog: ActivityLog = {
+      ...log,
+      id: this.nextId++,
+      createdAt: new Date()
+    };
+    this.activityLogs.push(newLog);
+    return newLog;
+  }
+
+  async getActivityLogs(): Promise<ActivityLog[]> {
+    return this.activityLogs;
+  }
 
   async createPainEntry(entry: InsertPainEntry): Promise<PainEntry> {
     const newEntry = {
       ...entry,
       id: this.nextId++,
-      date: new Date()
+      date: new Date(),
+      notes: entry.notes || null
     };
     this.painEntries.push(newEntry);
     return newEntry;
@@ -81,7 +101,10 @@ export class MemStorage implements IStorage {
     const newEvent = {
       ...event,
       id: this.nextId++,
-      timestamp: new Date()
+      timestamp: new Date(),
+      metadata: event.metadata || null,
+      sessionId: event.sessionId || null,
+      userAgent: event.userAgent || null
     };
     this.analyticsEvents.push(newEvent);
     return newEvent;
