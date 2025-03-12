@@ -6,6 +6,7 @@ import {
   activityLogs,
   exerciseLogs,
   exercises,
+  exerciseCategories,
   type PainEntry, 
   type InsertPainEntry,
   type EmailSubscription, 
@@ -15,7 +16,9 @@ import {
   type ActivityLog,
   type InsertActivityLog,
   type ExerciseLog,
-  type InsertExerciseLog
+  type InsertExerciseLog,
+  type Exercise,
+  type ExerciseCategory
 } from "@shared/schema";
 import { eq } from "drizzle-orm";
 
@@ -35,6 +38,8 @@ export interface IStorage {
   createExerciseLog(log: InsertExerciseLog): Promise<ExerciseLog>;
   getExerciseLogs(): Promise<ExerciseLog[]>;
   updateExerciseLog(id: number, completed: boolean): Promise<boolean>;
+  getExercises(): Promise<Exercise[]>;
+  getExerciseCategories(): Promise<ExerciseCategory[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -160,6 +165,14 @@ export class DatabaseStorage implements IStorage {
       return db.select().from(analyticsEvents).where(eq(analyticsEvents.eventName, eventName));
     }
     return db.select().from(analyticsEvents);
+  }
+
+  async getExercises(): Promise<Exercise[]> {
+    return db.select().from(exercises);
+  }
+
+  async getExerciseCategories(): Promise<ExerciseCategory[]> {
+    return db.select().from(exerciseCategories).orderBy(exerciseCategories.orderIndex);
   }
 }
 

@@ -16,11 +16,15 @@ interface ExerciseWithCategory extends Exercise {
 }
 
 export default function Exercises() {
-  const { data: exercises, isLoading } = useQuery<ExerciseWithCategory[]>({
+  const { data: exercises, isLoading } = useQuery<Exercise[]>({
     queryKey: ["/api/exercises"],
   });
 
-  if (isLoading) {
+  const { data: categories, isLoading: loadingCategories } = useQuery<ExerciseCategory[]>({
+    queryKey: ["/api/exercise-categories"],
+  });
+
+  if (isLoading || loadingCategories) {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -30,11 +34,13 @@ export default function Exercises() {
 
   // Group exercises by category
   const exercisesByCategory = exercises?.reduce((acc, exercise) => {
-    const categoryName = exercise.category.name;
-    if (!acc[categoryName]) {
-      acc[categoryName] = [];
+    const category = categories?.find(c => c.id === exercise.categoryId);
+    if (category) {
+      if (!acc[category.name]) {
+        acc[category.name] = [];
+      }
+      acc[category.name].push({...exercise, category});
     }
-    acc[categoryName].push(exercise);
     return acc;
   }, {} as Record<string, ExerciseWithCategory[]>);
 

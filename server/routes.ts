@@ -111,6 +111,28 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  //New Routes
+  app.get("/api/exercises", async (_req, res) => {
+    try {
+      const exercises = await storage.getExercises();
+      res.json(exercises);
+    } catch (error) {
+      console.error('Error fetching exercises:', error);
+      res.status(500).json({ error: "Failed to fetch exercises" });
+    }
+  });
+
+  app.get("/api/exercise-categories", async (_req, res) => {
+    try {
+      const categories = await storage.getExerciseCategories();
+      res.json(categories);
+    } catch (error) {
+      console.error('Error fetching exercise categories:', error);
+      res.status(500).json({ error: "Failed to fetch exercise categories" });
+    }
+  });
+
+
   app.post("/api/pain-entries", validateRequest(insertPainEntrySchema), async (req, res) => {
     try {
       const result = await storage.createPainEntry(req.validatedData);
