@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Table,
@@ -8,12 +9,16 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 import { format } from "date-fns";
 import { Loader2 } from "lucide-react";
 import { type ActivityLog } from "@shared/schema";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { ActivityLogForm } from "@/components/activity-log-form";
 
 export default function Dashboard() {
+  const [isAddingLog, setIsAddingLog] = useState(false);
   const { data: activityLogs, isLoading } = useQuery<ActivityLog[]>({
     queryKey: ["/api/activity-logs"],
   });
@@ -41,6 +46,13 @@ export default function Dashboard() {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Recovery Dashboard</h1>
+        <Button 
+          onClick={() => setIsAddingLog(true)}
+          className="gap-2"
+        >
+          <Plus className="h-4 w-4" />
+          Add Activity Log
+        </Button>
       </div>
 
       <Card className="bg-white rounded-lg shadow-sm">
@@ -99,6 +111,11 @@ export default function Dashboard() {
           </Table>
         </CardContent>
       </Card>
+
+      <ActivityLogForm 
+        open={isAddingLog} 
+        onOpenChange={setIsAddingLog}
+      />
     </div>
   );
 }
