@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/drawer";
 import { insertActivityLogSchema, type InsertActivityLog } from "@shared/schema";
 import { useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 interface Props {
   open: boolean;
@@ -35,6 +35,7 @@ interface Props {
 export function ActivityLogForm({ open, onOpenChange }: Props) {
   const [date, setDate] = useState<Date>(new Date());
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const form = useForm<InsertActivityLog>({
     resolver: zodResolver(insertActivityLogSchema),
@@ -50,7 +51,7 @@ export function ActivityLogForm({ open, onOpenChange }: Props) {
 
   async function onSubmit(data: InsertActivityLog) {
     try {
-      await apiRequest("/api/activity-logs", {
+      const response = await fetch("/api/activity-logs", {
         method: "POST",
         headers: {
           'Content-Type': 'application/json'
@@ -61,14 +62,28 @@ export function ActivityLogForm({ open, onOpenChange }: Props) {
         })
       });
 
+      if (!response.ok) {
+        throw new Error('Failed to save activity log');
+      }
+
       // Invalidate and refetch
-      queryClient.invalidateQueries({ queryKey: ["/api/activity-logs"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/activity-logs"] });
+
+      toast({
+        title: "Success",
+        description: "Activity log saved successfully"
+      });
 
       // Reset form and close drawer
       form.reset();
       onOpenChange(false);
     } catch (error) {
       console.error("Failed to log activity:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to save activity log"
+      });
     }
   }
 
