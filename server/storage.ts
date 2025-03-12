@@ -27,6 +27,7 @@ export interface IStorage {
   getEvents(eventName?: string): Promise<AnalyticsEvent[]>;
   createActivityLog(log: InsertActivityLog): Promise<ActivityLog>;
   getActivityLogs(): Promise<ActivityLog[]>;
+  deleteActivityLog(id: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -40,6 +41,14 @@ export class DatabaseStorage implements IStorage {
 
   async getActivityLogs(): Promise<ActivityLog[]> {
     return db.select().from(activityLogs).orderBy(activityLogs.createdAt);
+  }
+
+  async deleteActivityLog(id: number): Promise<boolean> {
+    const [deleted] = await db
+      .delete(activityLogs)
+      .where(eq(activityLogs.id, id))
+      .returning();
+    return !!deleted;
   }
 
   async createPainEntry(entry: InsertPainEntry): Promise<PainEntry> {

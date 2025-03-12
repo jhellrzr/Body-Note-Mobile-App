@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Table,
   TableBody,
@@ -10,18 +10,60 @@ import {
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { Loader2 } from "lucide-react";
 import { type ActivityLog } from "@shared/schema";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { ActivityLogForm } from "@/components/activity-log-form";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Dashboard() {
   const [isAddingLog, setIsAddingLog] = useState(false);
+  const queryClient = useQueryClient();
   const { data: activityLogs, isLoading } = useQuery<ActivityLog[]>({
     queryKey: ["/api/activity-logs"],
   });
+  const { toast } = useToast();
+
+  const handleDelete = async (id: number) => {
+    try {
+      const response = await fetch(`/api/activity-logs/${id}`, {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete activity log');
+      }
+
+      toast({
+        title: "Success",
+        description: "Activity log deleted successfully"
+      });
+
+      // Refetch the activity logs
+      await queryClient.invalidateQueries({ queryKey: ["/api/activity-logs"] });
+    } catch (error) {
+      console.error('Error deleting activity log:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to delete activity log"
+      });
+    }
+  };
+
+  const handleEdit = (log: ActivityLog) => {
+    //Implementation for edit functionality would go here.  This is beyond the scope of the provided edit.
+    console.log("Edit Log:", log);
+  };
+
 
   if (isLoading) {
     return (
@@ -93,6 +135,7 @@ export default function Dashboard() {
                 <TableHead className="font-semibold">Activity</TableHead>
                 <TableHead className="font-semibold">Pain Level</TableHead>
                 <TableHead className="font-semibold">Symptoms</TableHead>
+                <TableHead className="w-[50px]"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -105,6 +148,31 @@ export default function Dashboard() {
                   <TableCell>{log.activity || '-'}</TableCell>
                   <TableCell>{log.painLevel?.toFixed(1) ?? '-'}</TableCell>
                   <TableCell>{log.symptoms || 'No symptoms'}</TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() => handleEdit(log)}
+                          className="cursor-pointer"
+                        >
+                          <Pencil className="mr-2 h-4 w-4" />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => handleDelete(log.id)}
+                          className="cursor-pointer text-red-600"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>

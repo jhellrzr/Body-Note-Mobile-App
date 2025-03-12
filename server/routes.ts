@@ -47,6 +47,25 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  app.delete("/api/activity-logs/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid ID format" });
+      }
+
+      const success = await storage.deleteActivityLog(id);
+      if (!success) {
+        return res.status(404).json({ error: "Activity log not found" });
+      }
+
+      res.json({ message: "Activity log deleted successfully" });
+    } catch (error) {
+      console.error('Error deleting activity log:', error);
+      res.status(500).json({ error: "Failed to delete activity log" });
+    }
+  });
+
   app.post("/api/pain-entries", validateRequest(insertPainEntrySchema), async (req, res) => {
     try {
       const result = await storage.createPainEntry(req.validatedData);
