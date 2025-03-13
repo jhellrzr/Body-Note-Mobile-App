@@ -34,6 +34,7 @@ export interface IStorage {
   getEvents(eventName?: string): Promise<AnalyticsEvent[]>;
   createActivityLog(log: InsertActivityLog): Promise<ActivityLog>;
   getActivityLogs(): Promise<ActivityLog[]>;
+  updateActivityLog(id: number, log: InsertActivityLog): Promise<ActivityLog | null>;
   deleteActivityLog(id: number): Promise<boolean>;
   createExerciseLog(log: InsertExerciseLog): Promise<ExerciseLog>;
   getExerciseLogs(): Promise<ExerciseLog[]>;
@@ -53,6 +54,18 @@ export class DatabaseStorage implements IStorage {
 
   async getActivityLogs(): Promise<ActivityLog[]> {
     return db.select().from(activityLogs).orderBy(activityLogs.createdAt);
+  }
+
+  async updateActivityLog(id: number, log: InsertActivityLog): Promise<ActivityLog | null> {
+    const [updated] = await db
+      .update(activityLogs)
+      .set({
+        ...log,
+        // Don't update createdAt on edit
+      })
+      .where(eq(activityLogs.id, id))
+      .returning();
+    return updated || null;
   }
 
   async deleteActivityLog(id: number): Promise<boolean> {

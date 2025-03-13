@@ -27,6 +27,7 @@ import { useLocation } from "wouter";
 
 export default function Dashboard() {
   const [isAddingLog, setIsAddingLog] = useState(false);
+  const [editingLog, setEditingLog] = useState<ActivityLog | undefined>();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const { data: activityLogs, isLoading: isLoadingActivity } = useQuery<ActivityLog[]>({
@@ -65,7 +66,15 @@ export default function Dashboard() {
   };
 
   const handleEdit = (log: ActivityLog) => {
-    console.log("Edit Log:", log);
+    setEditingLog(log);
+    setIsAddingLog(true);
+  };
+
+  const handleDrawerClose = (open: boolean) => {
+    setIsAddingLog(open);
+    if (!open) {
+      setEditingLog(undefined);
+    }
   };
 
   if (isLoadingActivity || isLoadingExercises) {
@@ -231,7 +240,8 @@ export default function Dashboard() {
 
       <ActivityLogForm 
         open={isAddingLog} 
-        onOpenChange={setIsAddingLog}
+        onOpenChange={handleDrawerClose}
+        editLog={editingLog}
       />
     </div>
   );

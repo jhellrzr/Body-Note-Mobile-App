@@ -27,32 +27,49 @@ import { insertActivityLogSchema, type InsertActivityLog } from "@shared/schema"
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
+interface ActivityLog {
+  id: number;
+  date: string;
+  steps?: number;
+  activity: string;
+  painLevel?: number;
+  symptoms: string;
+  notes?: string | null;
+}
+
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  editLog?: ActivityLog;
 }
 
-export function ActivityLogForm({ open, onOpenChange }: Props) {
-  const [date, setDate] = useState<Date>(new Date());
+export function ActivityLogForm({ open, onOpenChange, editLog }: Props) {
+  const [date, setDate] = useState<Date>(editLog ? new Date(editLog.date) : new Date());
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   const form = useForm<InsertActivityLog>({
     resolver: zodResolver(insertActivityLogSchema),
     defaultValues: {
-      date: format(new Date(), 'yyyy-MM-dd'),
-      steps: undefined,
-      activity: "",
-      painLevel: undefined,
-      symptoms: "",
-      notes: null
+      date: editLog?.date || format(new Date(), 'yyyy-MM-dd'),
+      steps: editLog?.steps,
+      activity: editLog?.activity || "",
+      painLevel: editLog?.painLevel,
+      symptoms: editLog?.symptoms || "",
+      notes: editLog?.notes || null
     },
   });
 
   async function onSubmit(data: InsertActivityLog) {
     try {
-      const response = await fetch("/api/activity-logs", {
-        method: "POST",
+      const url = editLog 
+        ? `/api/activity-logs/${editLog.id}`
+        : "/api/activity-logs";
+
+      const method = editLog ? "PUT" : "POST";
+
+      const response = await fetch(url, {
+        method,
         headers: {
           'Content-Type': 'application/json'
         },
@@ -63,7 +80,7 @@ export function ActivityLogForm({ open, onOpenChange }: Props) {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to save activity log');
+        throw new Error(`Failed to ${editLog ? 'update' : 'save'} activity log`);
       }
 
       // Invalidate and refetch
@@ -71,7 +88,7 @@ export function ActivityLogForm({ open, onOpenChange }: Props) {
 
       toast({
         title: "Success",
-        description: "Activity log saved successfully"
+        description: `Activity log ${editLog ? 'updated' : 'saved'} successfully`
       });
 
       // Reset form and close drawer
@@ -82,7 +99,7 @@ export function ActivityLogForm({ open, onOpenChange }: Props) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to save activity log"
+        description: `Failed to ${editLog ? 'update' : 'save'} activity log`
       });
     }
   }
@@ -92,7 +109,7 @@ export function ActivityLogForm({ open, onOpenChange }: Props) {
       <DrawerContent className="max-h-[95vh] flex flex-col">
         <div className="flex-1 overflow-y-auto">
           <DrawerHeader>
-            <DrawerTitle>Log Daily Activity</DrawerTitle>
+            <DrawerTitle>{editLog ? 'Edit Activity Log' : 'Log Daily Activity'}</DrawerTitle>
           </DrawerHeader>
 
           <Form {...form}>
@@ -206,7 +223,7 @@ export function ActivityLogForm({ open, onOpenChange }: Props) {
 
         <DrawerFooter className="px-4 border-t">
           <Button type="submit" className="w-full" onClick={form.handleSubmit(onSubmit)}>
-            Save Activity Log
+            {editLog ? 'Update Activity Log' : 'Save Activity Log'}
           </Button>
           <DrawerClose asChild>
             <Button variant="outline" className="w-full">
