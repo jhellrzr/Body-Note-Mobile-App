@@ -11,7 +11,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, MoreHorizontal, Pencil, Trash2, Dumbbell } from "lucide-react";
-import { format } from "date-fns";
+import { parseISO, format } from "date-fns";
 import { Loader2 } from "lucide-react";
 import { type ActivityLog, type ExerciseLog } from "@shared/schema";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -87,11 +87,11 @@ export default function Dashboard() {
 
   // Sort logs by date in ascending order for the chart
   const sortedLogs = [...(activityLogs || [])].sort(
-    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    (a, b) => parseISO(a.date).getTime() - parseISO(b.date).getTime()
   );
 
   const chartData = sortedLogs.map(log => ({
-    date: format(new Date(log.date), 'MMM d'),
+    date: format(parseISO(log.date), 'MMM d'),
     painLevel: log.painLevel || 0,
     steps: log.steps || 0
   }));
@@ -200,7 +200,7 @@ export default function Dashboard() {
               {activityLogs?.map((log) => (
                 <TableRow key={log.id}>
                   <TableCell className="font-medium">
-                    {format(new Date(log.date), 'MMM d')}
+                    {format(parseISO(log.date), 'MMM d')}
                   </TableCell>
                   <TableCell>{log.steps?.toLocaleString() ?? '-'}</TableCell>
                   <TableCell>{log.activity || '-'}</TableCell>
