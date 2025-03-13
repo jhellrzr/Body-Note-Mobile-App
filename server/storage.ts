@@ -20,7 +20,7 @@ import {
   type Exercise,
   type ExerciseCategory
 } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 
 export interface IStorage {
   createPainEntry(entry: InsertPainEntry): Promise<PainEntry>;
@@ -55,7 +55,7 @@ export class DatabaseStorage implements IStorage {
   async getActivityLogs(): Promise<ActivityLog[]> {
     return db.select()
       .from(activityLogs)
-      .orderBy(activityLogs.date, "desc");
+      .orderBy(desc(activityLogs.date));
   }
 
   async updateActivityLog(id: number, log: InsertActivityLog): Promise<ActivityLog | null> {
@@ -113,7 +113,7 @@ export class DatabaseStorage implements IStorage {
   async createPainEntry(entry: InsertPainEntry): Promise<PainEntry> {
     const [newEntry] = await db.insert(painEntries).values({
       ...entry,
-      date: new Date(),
+      createdAt: new Date(),
       notes: entry.notes || null
     }).returning();
     return newEntry;
