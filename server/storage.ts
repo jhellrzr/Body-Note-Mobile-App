@@ -53,7 +53,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getActivityLogs(): Promise<ActivityLog[]> {
-    return db.select().from(activityLogs).orderBy(activityLogs.createdAt);
+    return db.select()
+      .from(activityLogs)
+      .orderBy(activityLogs.date, "desc");
   }
 
   async updateActivityLog(id: number, log: InsertActivityLog): Promise<ActivityLog | null> {

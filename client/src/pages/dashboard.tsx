@@ -85,9 +85,9 @@ export default function Dashboard() {
     );
   }
 
-  // Sort logs by date in ascending order for the chart
+  // Sort logs by date in descending order for the chart
   const sortedLogs = [...(activityLogs || [])].sort(
-    (a, b) => parseISO(a.date).getTime() - parseISO(b.date).getTime()
+    (a, b) => parseISO(b.date).getTime() - parseISO(a.date).getTime()
   );
 
   const chartData = sortedLogs.map(log => ({
