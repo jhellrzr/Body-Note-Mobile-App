@@ -44,23 +44,26 @@ export default function Exercises() {
     return acc;
   }, {} as Record<string, ExerciseWithCategory[]>);
 
+  // Sort categories by orderIndex
+  const sortedCategories = categories?.sort((a, b) => a.orderIndex - b.orderIndex);
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between space-x-4">
-        <h1 className="text-4xl font-bold tracking-tight">Exercise Tracking</h1>
+        <h1 className="text-4xl font-bold tracking-tight">Nightly Injury Prevention Routine</h1>
         <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white px-8">
           Log Workout
         </Button>
       </div>
 
       <div className="grid gap-6">
-        {exercisesByCategory && Object.entries(exercisesByCategory).map(([category, exercises]) => (
-          <Card key={category} className="bg-white rounded-lg shadow-sm">
+        {sortedCategories?.map((category) => (
+          <Card key={category.id} className="bg-white rounded-lg shadow-sm">
             <CardHeader className="border-b bg-white">
-              <CardTitle className="text-xl font-semibold">{category}</CardTitle>
+              <CardTitle className="text-xl font-semibold">{category.name}</CardTitle>
             </CardHeader>
             <CardContent className="divide-y">
-              {exercises.map((exercise) => (
+              {exercisesByCategory?.[category.name]?.map((exercise) => (
                 <div key={exercise.id} className="py-4 first:pt-4 last:pb-4">
                   <div className="flex items-center justify-between">
                     <div className="space-y-1">
@@ -98,9 +101,9 @@ export default function Exercises() {
                           <Input 
                             type="number" 
                             className="w-16 text-center" 
-                            placeholder={exercise.duration.toString()}
+                            placeholder={(exercise.duration / 60).toString()}
                           />
-                          <span className="text-sm text-gray-500">sec</span>
+                          <span className="text-sm text-gray-500">min</span>
                         </div>
                       )}
                     </div>
