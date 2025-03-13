@@ -18,15 +18,17 @@ async function initializeDatabase() {
     const pool = new Pool({ connectionString: process.env.DATABASE_URL });
     const db = drizzle(pool, { schema });
 
-    // Run migrations
-    console.log('Running database migrations...');
-    try {
-      await migrate(db, { migrationsFolder: './migrations' });
-      console.log('Database migrations completed successfully');
-    } catch (migrateError) {
-      console.error('Migration error:', migrateError);
-      // Don't throw here - if migrations fail, we might still want to run the app
-      // with existing schema
+    // Run migrations if in production environment
+    if (process.env.NODE_ENV === 'production') {
+      console.log('Running database migrations in production...');
+      try {
+        await migrate(db, { migrationsFolder: './migrations' });
+        console.log('Database migrations completed successfully');
+      } catch (migrateError) {
+        console.error('Migration error:', migrateError);
+        // Don't throw here - if migrations fail, we might still want to run the app
+        // with existing schema
+      }
     }
 
     return { pool, db };
