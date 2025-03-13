@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format, parseISO } from "date-fns";
@@ -24,7 +24,7 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { insertActivityLogSchema, type InsertActivityLog } from "@shared/schema";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
 interface ActivityLog {
@@ -51,6 +51,12 @@ export function ActivityLogForm({ open, onOpenChange, editLog }: Props) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
+  // Query to check for existing log on the selected date
+  const { data: activityLogs } = useQuery<ActivityLog[]>({
+    queryKey: ["/api/activity-logs"],
+    enabled: open, // Only fetch when drawer is open
+  });
+
   const form = useForm<InsertActivityLog>({
     resolver: zodResolver(insertActivityLogSchema),
     defaultValues: {
@@ -63,13 +69,41 @@ export function ActivityLogForm({ open, onOpenChange, editLog }: Props) {
     },
   });
 
+  // Effect to check for existing log when date changes
+  useEffect(() => {
+    if (!activityLogs) return;
+
+    const selectedDate = format(date, 'yyyy-MM-dd');
+    const existingLog = activityLogs.find(log => log.date === selectedDate);
+
+    if (existingLog && !editLog) {
+      // If there's an existing log for this date and we're not already editing it,
+      // populate the form with the existing data
+      form.reset({
+        date: existingLog.date,
+        steps: existingLog.steps,
+        activity: existingLog.activity,
+        painLevel: existingLog.painLevel,
+        symptoms: existingLog.symptoms,
+        notes: existingLog.notes
+      });
+      toast({
+        title: "Existing Log Found",
+        description: "Loading existing log for this date."
+      });
+    }
+  }, [date, activityLogs, editLog, form]);
+
   async function onSubmit(data: InsertActivityLog) {
     try {
-      const url = editLog 
-        ? `/api/activity-logs/${editLog.id}`
+      const selectedDate = format(date, 'yyyy-MM-dd');
+      const existingLog = activityLogs?.find(log => log.date === selectedDate);
+
+      const url = existingLog 
+        ? `/api/activity-logs/${existingLog.id}`
         : "/api/activity-logs";
 
-      const method = editLog ? "PUT" : "POST";
+      const method = existingLog ? "PUT" : "POST";
 
       // Format the date in local timezone
       const localDate = format(date, 'yyyy-MM-dd');
@@ -86,7 +120,7 @@ export function ActivityLogForm({ open, onOpenChange, editLog }: Props) {
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to ${editLog ? 'update' : 'save'} activity log`);
+        throw new Error(`Failed to ${existingLog ? 'update' : 'save'} activity log`);
       }
 
       // Invalidate and refetch
@@ -94,7 +128,7 @@ export function ActivityLogForm({ open, onOpenChange, editLog }: Props) {
 
       toast({
         title: "Success",
-        description: `Activity log ${editLog ? 'updated' : 'saved'} successfully`
+        description: `Activity log ${existingLog ? 'updated' : 'saved'} successfully`
       });
 
       // Reset form and close drawer
