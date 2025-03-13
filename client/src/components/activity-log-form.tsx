@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { format } from "date-fns";
+import { format, startOfDay } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,14 +44,17 @@ interface Props {
 }
 
 export function ActivityLogForm({ open, onOpenChange, editLog }: Props) {
-  const [date, setDate] = useState<Date>(editLog ? new Date(editLog.date) : new Date());
+  // Initialize with startOfDay to normalize the time portion
+  const [date, setDate] = useState<Date>(
+    editLog ? startOfDay(new Date(editLog.date)) : startOfDay(new Date())
+  );
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   const form = useForm<InsertActivityLog>({
     resolver: zodResolver(insertActivityLogSchema),
     defaultValues: {
-      date: editLog?.date || format(new Date(), 'yyyy-MM-dd'),
+      date: editLog?.date || format(startOfDay(new Date()), 'yyyy-MM-dd'),
       steps: editLog?.steps,
       activity: editLog?.activity || "",
       painLevel: editLog?.painLevel,
@@ -68,6 +71,9 @@ export function ActivityLogForm({ open, onOpenChange, editLog }: Props) {
 
       const method = editLog ? "PUT" : "POST";
 
+      // Ensure we're using the local date string
+      const localDate = format(date, 'yyyy-MM-dd');
+
       const response = await fetch(url, {
         method,
         headers: {
@@ -75,7 +81,7 @@ export function ActivityLogForm({ open, onOpenChange, editLog }: Props) {
         },
         body: JSON.stringify({
           ...data,
-          date: format(date, 'yyyy-MM-dd')
+          date: localDate
         })
       });
 
@@ -127,8 +133,10 @@ export function ActivityLogForm({ open, onOpenChange, editLog }: Props) {
                           selected={date}
                           onSelect={(newDate) => {
                             if (newDate) {
-                              setDate(newDate);
-                              field.onChange(format(newDate, 'yyyy-MM-dd'));
+                              // Use startOfDay to normalize the time portion
+                              const normalizedDate = startOfDay(newDate);
+                              setDate(normalizedDate);
+                              field.onChange(format(normalizedDate, 'yyyy-MM-dd'));
                             }
                           }}
                         />
