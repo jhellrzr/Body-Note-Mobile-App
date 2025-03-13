@@ -85,16 +85,19 @@ export default function Dashboard() {
     );
   }
 
-  // Sort logs by date in descending order for the chart
+  // Sort logs by date in descending order for the table
   const sortedLogs = [...(activityLogs || [])].sort(
     (a, b) => parseISO(b.date).getTime() - parseISO(a.date).getTime()
   );
 
-  const chartData = sortedLogs.map(log => ({
-    date: format(parseISO(log.date), 'MMM d'),
-    painLevel: log.painLevel || 0,
-    steps: log.steps || 0
-  }));
+  // Create chart data with chronological ordering (oldest to newest)
+  const chartData = [...(activityLogs || [])]
+    .sort((a, b) => parseISO(a.date).getTime() - parseISO(b.date).getTime())
+    .map(log => ({
+      date: format(parseISO(log.date), 'MMM d'),
+      painLevel: log.painLevel || 0,
+      steps: log.steps || 0
+    }));
 
   // Get today's exercise summary
   const today = new Date().toISOString().split('T')[0];
@@ -197,7 +200,7 @@ export default function Dashboard() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {activityLogs?.map((log) => (
+              {sortedLogs.map((log) => (
                 <TableRow key={log.id}>
                   <TableCell className="font-medium">
                     {format(parseISO(log.date), 'MMM d')}
