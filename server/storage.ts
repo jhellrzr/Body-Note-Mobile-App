@@ -87,6 +87,14 @@ export class DatabaseStorage implements IStorage {
     return !!updated;
   }
 
+  async getExercises(): Promise<Exercise[]> {
+    return db.select().from(exercises);
+  }
+
+  async getExerciseCategories(): Promise<ExerciseCategory[]> {
+    return db.select().from(exerciseCategories).orderBy(exerciseCategories.orderIndex);
+  }
+
   async createPainEntry(entry: InsertPainEntry): Promise<PainEntry> {
     const [newEntry] = await db.insert(painEntries).values({
       ...entry,
@@ -166,15 +174,6 @@ export class DatabaseStorage implements IStorage {
     }
     return db.select().from(analyticsEvents);
   }
-
-  async getExercises(): Promise<Exercise[]> {
-    return db.select().from(exercises);
-  }
-
-  async getExerciseCategories(): Promise<ExerciseCategory[]> {
-    return db.select().from(exerciseCategories).orderBy(exerciseCategories.orderIndex);
-  }
 }
 
-// Export an instance of DatabaseStorage
 export const storage = new DatabaseStorage();
