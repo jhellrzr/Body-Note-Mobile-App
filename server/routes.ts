@@ -1,16 +1,21 @@
-import type { Express } from "express";
+import type { Express, Request } from "express";
 import { createServer } from "http";
 import { storage } from "./storage";
 import { insertPainEntrySchema, insertEmailSubscriptionSchema, insertAnalyticsEventSchema, insertActivityLogSchema, insertExerciseLogSchema } from "@shared/schema";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 
+// Add type for validated request
+interface ValidatedRequest extends Request {
+  validatedData: any;
+}
+
 export async function registerRoutes(app: Express) {
   // Security: Add request validation middleware
   const validateRequest = (schema: any) => {
-    return (req: any, res: any, next: any) => {
+    return (req: Request, res: any, next: any) => {
       try {
-        req.validatedData = schema.parse(req.body);
+        (req as ValidatedRequest).validatedData = schema.parse(req.body);
         next();
       } catch (error) {
         if (error instanceof ZodError) {
@@ -37,7 +42,7 @@ export async function registerRoutes(app: Express) {
     }
   });
 
-  app.post("/api/activity-logs", validateRequest(insertActivityLogSchema), async (req, res) => {
+  app.post("/api/activity-logs", validateRequest(insertActivityLogSchema), async (req: ValidatedRequest, res) => {
     try {
       const result = await storage.createActivityLog(req.validatedData);
       res.json(result);
@@ -77,7 +82,7 @@ export async function registerRoutes(app: Express) {
     }
   });
 
-  app.post("/api/exercise-logs", validateRequest(insertExerciseLogSchema), async (req, res) => {
+  app.post("/api/exercise-logs", validateRequest(insertExerciseLogSchema), async (req: ValidatedRequest, res) => {
     try {
       const result = await storage.createExerciseLog(req.validatedData);
       res.json(result);
@@ -111,7 +116,7 @@ export async function registerRoutes(app: Express) {
     }
   });
 
-  //New Routes
+  // Exercise and Category Routes
   app.get("/api/exercises", async (_req, res) => {
     try {
       const exercises = await storage.getExercises();
@@ -132,8 +137,8 @@ export async function registerRoutes(app: Express) {
     }
   });
 
-
-  app.post("/api/pain-entries", validateRequest(insertPainEntrySchema), async (req, res) => {
+  // Pain Entries Routes
+  app.post("/api/pain-entries", validateRequest(insertPainEntrySchema), async (req: ValidatedRequest, res) => {
     try {
       const result = await storage.createPainEntry(req.validatedData);
       res.json(result);
@@ -171,7 +176,8 @@ export async function registerRoutes(app: Express) {
     }
   });
 
-  app.post("/api/subscribe", validateRequest(insertEmailSubscriptionSchema), async (req, res) => {
+  // Email Subscription Routes
+  app.post("/api/subscribe", validateRequest(insertEmailSubscriptionSchema), async (req: ValidatedRequest, res) => {
     try {
       const existingSubscription = await storage.getEmailSubscription(req.validatedData.email);
 
@@ -210,12 +216,13 @@ export async function registerRoutes(app: Express) {
     }
   });
 
-  app.post("/api/analytics", validateRequest(insertAnalyticsEventSchema), async (req, res) => {
+  // Analytics Routes
+  app.post("/api/analytics", validateRequest(insertAnalyticsEventSchema), async (req: ValidatedRequest, res) => {
     try {
       const event = await storage.trackEvent({
         ...req.validatedData,
-        userAgent: req.headers['user-agent'],
-        sessionId: req.sessionID
+        userAgent: req.headers['user-agent'] || null,
+        sessionId: (req as any).sessionID || null
       });
       res.json(event);
     } catch (error) {
