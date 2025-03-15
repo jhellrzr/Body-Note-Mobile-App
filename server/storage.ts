@@ -45,17 +45,33 @@ export interface IStorage {
 
 export class DatabaseStorage implements IStorage {
   async createActivityLog(log: InsertActivityLog): Promise<ActivityLog> {
-    const [newLog] = await db.insert(activityLogs).values({
-      ...log,
-      createdAt: new Date()
-    }).returning();
-    return newLog;
+    console.log('Creating activity log:', log);
+    try {
+      const [newLog] = await db.insert(activityLogs).values({
+        ...log,
+        createdAt: new Date()
+      }).returning();
+      console.log('Created activity log:', newLog);
+      return newLog;
+    } catch (error) {
+      console.error('Error creating activity log:', error);
+      throw error;
+    }
   }
 
   async getActivityLogs(): Promise<ActivityLog[]> {
-    return db.select()
-      .from(activityLogs)
-      .orderBy(desc(activityLogs.date));
+    console.log('Fetching activity logs...');
+    try {
+      const logs = await db.select()
+        .from(activityLogs)
+        .orderBy(desc(activityLogs.date));
+      console.log(`Retrieved ${logs.length} activity logs`);
+      return logs;
+    } catch (error) {
+      console.error('Error fetching activity logs:', error);
+      // Re-throw the error to be handled by the route handler
+      throw error;
+    }
   }
 
   async updateActivityLog(id: number, log: InsertActivityLog): Promise<ActivityLog | null> {

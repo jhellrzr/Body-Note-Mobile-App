@@ -4,7 +4,11 @@ import ws from "ws";
 import * as schema from "@shared/schema";
 import { migrate } from 'drizzle-orm/neon-serverless/migrator';
 
+// Configure neon to use websockets
 neonConfig.webSocketConstructor = ws;
+neonConfig.useSecureWebSocket = true; // Force secure WebSocket in production
+neonConfig.pipelineTLS = true;
+neonConfig.pipelineConnect = true;
 
 // Function to initialize database connection
 async function initializeDatabase() {
@@ -15,11 +19,17 @@ async function initializeDatabase() {
   }
 
   try {
+    console.log('Initializing database connection...');
+    console.log('Environment:', process.env.NODE_ENV);
+
     // Use SSL in production
     const connectionOptions = process.env.NODE_ENV === 'production' 
       ? { 
           connectionString: process.env.DATABASE_URL,
-          ssl: true
+          ssl: {
+            rejectUnauthorized: false, // Required for some cloud platforms
+            sslmode: 'require'
+          }
         }
       : { 
           connectionString: process.env.DATABASE_URL 
@@ -27,6 +37,10 @@ async function initializeDatabase() {
 
     const pool = new Pool(connectionOptions);
     const db = drizzle(pool, { schema });
+
+    // Test the connection
+    const testResult = await pool.query('SELECT NOW()');
+    console.log('Database connection test successful:', testResult.rows[0]);
 
     // Run migrations if in production environment
     if (process.env.NODE_ENV === 'production') {
@@ -41,9 +55,13 @@ async function initializeDatabase() {
       }
     }
 
-    // Test the connection
-    await pool.query('SELECT 1');
-    console.log('Database connection established successfully');
+    // Verify tables exist
+    const tables = await pool.query(`
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_schema = 'public'
+    `);
+    console.log('Available tables:', tables.rows.map(r => r.table_name));
 
     return { pool, db };
   } catch (error) {
