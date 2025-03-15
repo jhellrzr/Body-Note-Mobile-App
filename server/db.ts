@@ -16,15 +16,34 @@ async function initializeDatabase() {
 
   try {
     console.log('Initializing database connection...');
-    const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    const pool = new Pool({ 
+      connectionString: process.env.DATABASE_URL,
+      max: 20, // Maximum number of clients in the pool
+      idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
+      connectionTimeoutMillis: 2000, // Return an error after 2 seconds if connection could not be established
+      maxUses: 7500, // Close a connection after it has been used 7500 times
+    });
 
-    // Test the connection
-    const client = await pool.connect();
-    try {
-      const result = await client.query('SELECT NOW()');
-      console.log('Database connection successful:', result.rows[0]);
-    } finally {
-      client.release();
+    // Test the connection with retry logic
+    let retries = 5;
+    while (retries > 0) {
+      try {
+        const client = await pool.connect();
+        try {
+          const result = await client.query('SELECT NOW()');
+          console.log('Database connection successful:', result.rows[0]);
+          break;
+        } finally {
+          client.release();
+        }
+      } catch (error) {
+        retries--;
+        if (retries === 0) {
+          throw error;
+        }
+        console.log(`Connection attempt failed. ${retries} retries remaining...`);
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retrying
+      }
     }
 
     const db = drizzle(pool, { schema });
@@ -59,6 +78,21 @@ let db: ReturnType<typeof drizzle>;
     pool = init.pool;
     db = init.db;
     console.log('Database initialization completed successfully');
+
+    // Setup periodic health check
+    setInterval(async () => {
+      try {
+        const client = await pool.connect();
+        try {
+          await client.query('SELECT 1');
+        } finally {
+          client.release();
+        }
+      } catch (error) {
+        console.error('Database health check failed:', error);
+      }
+    }, 30000); // Check every 30 seconds
+
   } catch (error) {
     console.error('Failed to initialize database. Application may not work correctly:', error);
     // Create dummy objects that will throw appropriate errors when used
