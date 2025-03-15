@@ -35,6 +35,8 @@ export interface IStorage {
   createExerciseLog(log: InsertExerciseLog): Promise<ExerciseLog>;
   getExerciseLogs(): Promise<ExerciseLog[]>;
   updateExerciseLog(id: number, completed: boolean): Promise<boolean>;
+  getExercises(): Promise<typeof exercises.$inferSelect[]>;
+  createExercise(exercise: typeof exercises.$inferInsert): Promise<typeof exercises.$inferSelect>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -161,7 +163,17 @@ export class DatabaseStorage implements IStorage {
     }
     return db.select().from(analyticsEvents);
   }
+
+  async getExercises() {
+    return db.select().from(exercises);
+  }
+
+  async createExercise(exercise: typeof exercises.$inferInsert) {
+    const [newExercise] = await db.insert(exercises)
+      .values(exercise)
+      .returning();
+    return newExercise;
+  }
 }
 
-// Export an instance of DatabaseStorage
 export const storage = new DatabaseStorage();
