@@ -6,16 +6,42 @@ import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
 
-// Security: Rate limiting
+// Security: Rate limiting with higher limits and proper retry handling
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
-  message: "Too many requests from this IP, please try again later."
+  windowMs: 5 * 60 * 1000, // 5 minutes
+  max: 500, // Limit each IP to 500 requests per windowMs
+  message: "Too many requests from this IP, please try again later.",
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  handler: (req, res) => {
+    res.status(429).json({
+      error: "Too many requests",
+      retryAfter: res.getHeader('Retry-After')
+    });
+  }
 });
-app.use("/api/", limiter);
+
+// Apply rate limiting only to API routes that need it
+app.use("/api/activity-logs", limiter);
+app.use("/api/exercise-logs", limiter);
 
 // Security: Prevent HTTP Parameter Pollution
 app.use(hpp());
+
+// CORS headers for better browser compatibility
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header('Access-Control-Expose-Headers', 'X-Total-Count');
+
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+    return;
+  }
+  next();
+});
 
 // Disable caching for API routes
 app.use('/api', (req, res, next) => {
@@ -25,9 +51,9 @@ app.use('/api', (req, res, next) => {
   next();
 });
 
-// Body parsing with size limits
-app.use(express.json({ limit: '1mb' }));
-app.use(express.urlencoded({ extended: false, limit: '1mb' }));
+// Body parsing with increased limits for larger payloads
+app.use(express.json({ limit: '2mb' }));
+app.use(express.urlencoded({ extended: false, limit: '2mb' }));
 
 // Security: Add general security middleware
 app.use((req, res, next) => {
@@ -37,6 +63,8 @@ app.use((req, res, next) => {
   // Add security headers
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
 
   next();
 });
@@ -51,7 +79,9 @@ app.use((req, res, next) => {
   if (path.startsWith("/api")) {
     console.log(`[${new Date().toISOString()}] Incoming ${req.method} ${path}`);
     console.log('Query params:', req.query);
-    console.log('Request body:', req.body);
+    if (!path.includes('password') && !path.includes('token')) {
+      console.log('Request body:', req.body);
+    }
   }
 
   const originalResJson = res.json;
@@ -64,19 +94,20 @@ app.use((req, res, next) => {
     const duration = Date.now() - start;
     if (path.startsWith("/api")) {
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        // Security: Sanitize sensitive data from logs
+
+      // Only log response for non-200 status codes
+      if (res.statusCode !== 200 && capturedJsonResponse) {
         const sanitizedResponse = { ...capturedJsonResponse };
         delete sanitizedResponse.password;
         delete sanitizedResponse.token;
         logLine += ` :: ${JSON.stringify(sanitizedResponse)}`;
       }
 
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
+      if (res.statusCode >= 400) {
+        console.error(logLine);
+      } else {
+        console.log(logLine);
       }
-
-      log(logLine);
     }
   });
 
@@ -101,7 +132,10 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     console.error('Server Error:', err);
   }
 
-  res.status(status).json({ message });
+  res.status(status).json({ 
+    error: message,
+    retryAfter: status === 429 ? 60 : undefined // Suggest retry after 1 minute for rate limit errors
+  });
 });
 
 (async () => {
