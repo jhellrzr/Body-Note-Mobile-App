@@ -15,7 +15,18 @@ async function initializeDatabase() {
   }
 
   try {
+    console.log('Initializing database connection...');
     const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+
+    // Test the connection
+    const client = await pool.connect();
+    try {
+      const result = await client.query('SELECT NOW()');
+      console.log('Database connection successful:', result.rows[0]);
+    } finally {
+      client.release();
+    }
+
     const db = drizzle(pool, { schema });
 
     // Run migrations if in production environment
@@ -42,15 +53,18 @@ async function initializeDatabase() {
 let pool: Pool;
 let db: ReturnType<typeof drizzle>;
 
-try {
-  const init = await initializeDatabase();
-  pool = init.pool;
-  db = init.db;
-} catch (error) {
-  console.error('Failed to initialize database. Application may not work correctly:', error);
-  // Create dummy objects that will throw appropriate errors when used
-  pool = new Pool({ connectionString: '' });
-  db = drizzle(pool, { schema });
-}
+(async () => {
+  try {
+    const init = await initializeDatabase();
+    pool = init.pool;
+    db = init.db;
+    console.log('Database initialization completed successfully');
+  } catch (error) {
+    console.error('Failed to initialize database. Application may not work correctly:', error);
+    // Create dummy objects that will throw appropriate errors when used
+    pool = new Pool({ connectionString: '' });
+    db = drizzle(pool, { schema });
+  }
+})();
 
 export { pool, db };
