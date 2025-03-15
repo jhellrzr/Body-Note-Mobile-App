@@ -34,9 +34,7 @@ export async function registerRoutes(app: Express) {
   // Activity Logs Routes
   app.get("/api/activity-logs", async (_req, res) => {
     try {
-      console.log('Fetching activity logs...');
       const logs = await storage.getActivityLogs();
-      console.log(`Retrieved ${logs.length} activity logs`);
       res.json(logs);
     } catch (error) {
       console.error('Error fetching activity logs:', error);
