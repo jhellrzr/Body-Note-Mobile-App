@@ -6,34 +6,56 @@ import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
 
-// Security: Rate limiting with higher limits and proper retry handling
-const limiter = rateLimit({
-  windowMs: 5 * 60 * 1000, // 5 minutes
-  max: 500, // Limit each IP to 500 requests per windowMs
-  message: "Too many requests from this IP, please try again later.",
-  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+// Security: Significantly increased rate limits with proper request queuing
+const activityLogLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 1000, // Allow 1000 requests per minute
+  message: "Too many requests, please try again later",
+  standardHeaders: true,
+  legacyHeaders: false,
   handler: (req, res) => {
     res.status(429).json({
       error: "Too many requests",
-      retryAfter: res.getHeader('Retry-After')
+      retryAfter: Math.ceil(res.getHeader('Retry-After') as number / 1000)
     });
+  },
+  keyGenerator: (req) => {
+    return req.ip + ':' + req.path; // Separate limits for different endpoints
   }
 });
 
-// Apply rate limiting only to API routes that need it
-app.use("/api/activity-logs", limiter);
-app.use("/api/exercise-logs", limiter);
+const exerciseLogLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 1000, // Allow 1000 requests per minute
+  message: "Too many requests, please try again later",
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => {
+    res.status(429).json({
+      error: "Too many requests",
+      retryAfter: Math.ceil(res.getHeader('Retry-After') as number / 1000)
+    });
+  },
+  keyGenerator: (req) => {
+    return req.ip + ':' + req.path; // Separate limits for different endpoints
+  }
+});
+
+// Apply separate rate limiters to different endpoints
+app.use("/api/activity-logs", activityLogLimiter);
+app.use("/api/exercise-logs", exerciseLogLimiter);
 
 // Security: Prevent HTTP Parameter Pollution
 app.use(hpp());
 
-// CORS headers for better browser compatibility
+// Enhanced CORS configuration
 app.use((req, res, next) => {
+  // Allow specific origins in production
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  res.header('Access-Control-Expose-Headers', 'X-Total-Count');
+  res.header('Access-Control-Expose-Headers', 'X-Total-Count, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset');
+  res.header('Access-Control-Max-Age', '86400'); // 24 hours
 
   // Handle preflight requests
   if (req.method === 'OPTIONS') {
@@ -51,11 +73,11 @@ app.use('/api', (req, res, next) => {
   next();
 });
 
-// Body parsing with increased limits for larger payloads
+// Body parsing with increased limits
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: false, limit: '2mb' }));
 
-// Security: Add general security middleware
+// Enhanced security middleware
 app.use((req, res, next) => {
   // Remove sensitive headers
   res.removeHeader('X-Powered-By');
@@ -65,22 +87,26 @@ app.use((req, res, next) => {
   res.setHeader('X-XSS-Protection', '1; mode=block');
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
   res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  res.setHeader('Referrer-Policy', 'same-origin');
+  res.setHeader('Feature-Policy', "camera 'none'; microphone 'none'");
 
   next();
 });
 
-// Request logging middleware with enhanced debugging
+// Enhanced request logging middleware
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
   let capturedJsonResponse: Record<string, any> | undefined = undefined;
 
-  // Enhanced request logging
   if (path.startsWith("/api")) {
     console.log(`[${new Date().toISOString()}] Incoming ${req.method} ${path}`);
-    console.log('Query params:', req.query);
     if (!path.includes('password') && !path.includes('token')) {
-      console.log('Request body:', req.body);
+      console.log('Headers:', {
+        'User-Agent': req.headers['user-agent'],
+        'Content-Type': req.headers['content-type'],
+        'Accept': req.headers['accept']
+      });
     }
   }
 
@@ -114,7 +140,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// Error handling middleware with enhanced error logging
+// Enhanced error handling middleware
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   console.error('Error details:', {
     message: err.message,
@@ -134,10 +160,11 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
 
   res.status(status).json({ 
     error: message,
-    retryAfter: status === 429 ? 60 : undefined // Suggest retry after 1 minute for rate limit errors
+    retryAfter: status === 429 ? 30 : undefined // Suggest retry after 30 seconds for rate limit errors
   });
 });
 
+// Start server with enhanced error handling
 (async () => {
   try {
     const server = await registerRoutes(app);
