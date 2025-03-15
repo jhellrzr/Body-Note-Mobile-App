@@ -1,95 +1,16 @@
-import { db } from "./db";
-import { 
-  painEntries,
-  emailSubscriptions,
-  analyticsEvents,
-  activityLogs,
-  exerciseLogs,
-  exercises,
-  type PainEntry, 
-  type InsertPainEntry,
-  type EmailSubscription, 
-  type InsertEmailSubscription,
-  type InsertAnalyticsEvent,
-  type AnalyticsEvent,
-  type ActivityLog,
-  type InsertActivityLog,
-  type ExerciseLog,
-  type InsertExerciseLog
-} from "@shared/schema";
 import { eq } from "drizzle-orm";
+import { db } from "./db";
+import { painEntries, type PainEntry, type InsertPainEntry } from "@shared/schema";
 
 export interface IStorage {
   createPainEntry(entry: InsertPainEntry): Promise<PainEntry>;
   getPainEntries(): Promise<PainEntry[]>;
   getPainEntry(id: number): Promise<PainEntry | undefined>;
-  createEmailSubscription(email: InsertEmailSubscription): Promise<EmailSubscription>;
-  verifyEmailSubscription(token: string): Promise<boolean>;
-  getEmailSubscription(email: string): Promise<EmailSubscription | undefined>;
-  isEmailSubscribed(email: string): Promise<boolean>;
-  trackEvent(event: InsertAnalyticsEvent): Promise<AnalyticsEvent>;
-  getEvents(eventName?: string): Promise<AnalyticsEvent[]>;
-  createActivityLog(log: InsertActivityLog): Promise<ActivityLog>;
-  getActivityLogs(): Promise<ActivityLog[]>;
-  deleteActivityLog(id: number): Promise<boolean>;
-  createExerciseLog(log: InsertExerciseLog): Promise<ExerciseLog>;
-  getExerciseLogs(): Promise<ExerciseLog[]>;
-  updateExerciseLog(id: number, completed: boolean): Promise<boolean>;
-  getExercises(): Promise<typeof exercises.$inferSelect[]>;
-  createExercise(exercise: typeof exercises.$inferInsert): Promise<typeof exercises.$inferSelect>;
 }
 
 export class DatabaseStorage implements IStorage {
-  async createActivityLog(log: InsertActivityLog): Promise<ActivityLog> {
-    const [newLog] = await db.insert(activityLogs).values({
-      ...log,
-      createdAt: new Date()
-    }).returning();
-    return newLog;
-  }
-
-  async getActivityLogs(): Promise<ActivityLog[]> {
-    return db.select().from(activityLogs).orderBy(activityLogs.createdAt);
-  }
-
-  async deleteActivityLog(id: number): Promise<boolean> {
-    const [deleted] = await db
-      .delete(activityLogs)
-      .where(eq(activityLogs.id, id))
-      .returning();
-    return !!deleted;
-  }
-
-  async createExerciseLog(log: InsertExerciseLog): Promise<ExerciseLog> {
-    const [newLog] = await db.insert(exerciseLogs).values({
-      ...log,
-      completed: false,
-      createdAt: new Date()
-    }).returning();
-    return newLog;
-  }
-
-  async getExerciseLogs(): Promise<ExerciseLog[]> {
-    return db.select()
-      .from(exerciseLogs)
-      .orderBy(exerciseLogs.date);
-  }
-
-  async updateExerciseLog(id: number, completed: boolean): Promise<boolean> {
-    const [updated] = await db
-      .update(exerciseLogs)
-      .set({ completed })
-      .where(eq(exerciseLogs.id, id))
-      .returning();
-    return !!updated;
-  }
-
   async createPainEntry(entry: InsertPainEntry): Promise<PainEntry> {
-    const [newEntry] = await db.insert(painEntries).values({
-      ...entry,
-      date: new Date(),
-      notes: entry.notes || null
-    }).returning();
+    const [newEntry] = await db.insert(painEntries).values(entry).returning();
     return newEntry;
   }
 
@@ -98,81 +19,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getPainEntry(id: number): Promise<PainEntry | undefined> {
-    const [entry] = await db.select().from(painEntries).where(eq(painEntries.id, id));
+    const [entry] = await db.select()
+      .from(painEntries)
+      .where(eq(painEntries.id, id));
     return entry;
-  }
-
-  async createEmailSubscription(data: InsertEmailSubscription): Promise<EmailSubscription> {
-    const [subscription] = await db.insert(emailSubscriptions).values({
-      email: data.email,
-      dateSubscribed: new Date(),
-      isVerified: false,
-      verificationToken: Math.random().toString(36).substring(2),
-      lastUpdated: new Date()
-    }).returning();
-    return subscription;
-  }
-
-  async verifyEmailSubscription(token: string): Promise<boolean> {
-    const [subscription] = await db
-      .select()
-      .from(emailSubscriptions)
-      .where(eq(emailSubscriptions.verificationToken, token));
-
-    if (subscription) {
-      await db
-        .update(emailSubscriptions)
-        .set({
-          isVerified: true,
-          verificationToken: null,
-          lastUpdated: new Date()
-        })
-        .where(eq(emailSubscriptions.id, subscription.id));
-      return true;
-    }
-    return false;
-  }
-
-  async getEmailSubscription(email: string): Promise<EmailSubscription | undefined> {
-    const [subscription] = await db
-      .select()
-      .from(emailSubscriptions)
-      .where(eq(emailSubscriptions.email, email));
-    return subscription;
-  }
-
-  async isEmailSubscribed(email: string): Promise<boolean> {
-    const subscription = await this.getEmailSubscription(email);
-    return !!subscription?.isVerified;
-  }
-
-  async trackEvent(event: InsertAnalyticsEvent): Promise<AnalyticsEvent> {
-    const [newEvent] = await db.insert(analyticsEvents).values({
-      ...event,
-      timestamp: new Date(),
-      metadata: event.metadata || {},
-      sessionId: event.sessionId || null,
-      userAgent: event.userAgent || null
-    }).returning();
-    return newEvent;
-  }
-
-  async getEvents(eventName?: string): Promise<AnalyticsEvent[]> {
-    if (eventName) {
-      return db.select().from(analyticsEvents).where(eq(analyticsEvents.eventName, eventName));
-    }
-    return db.select().from(analyticsEvents);
-  }
-
-  async getExercises() {
-    return db.select().from(exercises);
-  }
-
-  async createExercise(exercise: typeof exercises.$inferInsert) {
-    const [newExercise] = await db.insert(exercises)
-      .values(exercise)
-      .returning();
-    return newExercise;
   }
 }
 

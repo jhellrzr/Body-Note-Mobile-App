@@ -7,10 +7,9 @@ import Home from "@/pages/home";
 import Dashboard from "@/pages/dashboard";
 import Exercises from "@/pages/exercises";
 import NotFound from "@/pages/not-found";
-import SymptomTracker from "@/pages/symptom-tracker";
+import SymptomTracker from "@/pages/symptom-tracker"; // This will be our renamed current home page
 import { SubscriptionButton } from "@/components/subscription-button";
 import "./i18n"; // Import i18n configuration
-import { Heart } from "lucide-react";
 
 function Router() {
   return (
@@ -27,16 +26,11 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="min-h-screen bg-background flex flex-col">
+      <div className="min-h-screen bg-background">
         <Nav />
-        <main className="container mx-auto px-4 py-8 flex-1">
+        <main className="container mx-auto px-4 py-8">
           <Router />
         </main>
-        <footer className="border-t py-4">
-          <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-            Made with <Heart className="w-3 h-3 inline text-red-500" /> in San Francisco
-          </div>
-        </footer>
         <SubscriptionButton />
       </div>
       <Toaster />

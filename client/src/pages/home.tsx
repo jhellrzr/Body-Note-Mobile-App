@@ -1,7 +1,7 @@
 import { useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Activity, LineChart } from "lucide-react";
+import { Activity, LineChart, Heart } from "lucide-react";
 
 export default function HomePage() {
   const [, setLocation] = useLocation();
@@ -64,6 +64,12 @@ export default function HomePage() {
               </Button>
             </CardContent>
           </Card>
+        </div>
+
+        <div className="mt-12 text-center">
+          <p className="text-sm text-muted-foreground flex items-center justify-center gap-2">
+            Made with <Heart className="h-4 w-4 text-red-500" /> for your wellness journey
+          </p>
         </div>
       </div>
     </div>
