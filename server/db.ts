@@ -15,7 +15,17 @@ async function initializeDatabase() {
   }
 
   try {
-    const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    // Use SSL in production
+    const connectionOptions = process.env.NODE_ENV === 'production' 
+      ? { 
+          connectionString: process.env.DATABASE_URL,
+          ssl: true
+        }
+      : { 
+          connectionString: process.env.DATABASE_URL 
+        };
+
+    const pool = new Pool(connectionOptions);
     const db = drizzle(pool, { schema });
 
     // Run migrations if in production environment
@@ -30,6 +40,10 @@ async function initializeDatabase() {
         // with existing schema
       }
     }
+
+    // Test the connection
+    await pool.query('SELECT 1');
+    console.log('Database connection established successfully');
 
     return { pool, db };
   } catch (error) {
