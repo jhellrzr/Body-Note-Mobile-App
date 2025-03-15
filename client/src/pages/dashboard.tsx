@@ -10,8 +10,8 @@ import {
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, MoreHorizontal, Pencil, Trash2, Dumbbell, AlertCircle } from "lucide-react";
-import { parseISO, format } from "date-fns";
+import { Plus, MoreHorizontal, Pencil, Trash2, Dumbbell } from "lucide-react";
+import { format } from "date-fns";
 import { Loader2 } from "lucide-react";
 import { type ActivityLog, type ExerciseLog } from "@shared/schema";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -25,67 +25,27 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 
-const MAX_RETRIES = 3;
-const RETRY_DELAY = 1000; // 1 second
-
-async function fetchWithRetry(url: string, options: RequestInit = {}, retries = MAX_RETRIES): Promise<any> {
-  try {
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-    });
-
-    if (response.status === 429 && retries > 0) {
-      const retryAfter = response.headers.get('Retry-After');
-      const delay = retryAfter ? parseInt(retryAfter) * 1000 : RETRY_DELAY;
-      await new Promise(resolve => setTimeout(resolve, delay));
-      return fetchWithRetry(url, options, retries - 1);
-    }
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    return response.json();
-  } catch (error) {
-    if (retries > 0) {
-      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
-      return fetchWithRetry(url, options, retries - 1);
-    }
-    throw error;
-  }
-}
-
 export default function Dashboard() {
   const [isAddingLog, setIsAddingLog] = useState(false);
-  const [editingLog, setEditingLog] = useState<ActivityLog | undefined>();
-  const [error, setError] = useState<string | null>(null);
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
-  const { data: activityLogs, isLoading: isLoadingActivity, error: activityError } = useQuery<ActivityLog[]>({
+  const { data: activityLogs, isLoading: isLoadingActivity } = useQuery<ActivityLog[]>({
     queryKey: ["/api/activity-logs"],
-    queryFn: () => fetchWithRetry("/api/activity-logs"),
-    retry: 3,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
-
-  const { data: exerciseLogs, isLoading: isLoadingExercises, error: exerciseError } = useQuery<ExerciseLog[]>({
+  const { data: exerciseLogs, isLoading: isLoadingExercises } = useQuery<ExerciseLog[]>({
     queryKey: ["/api/exercise-logs"],
-    queryFn: () => fetchWithRetry("/api/exercise-logs"),
-    retry: 3,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
-
   const { toast } = useToast();
 
   const handleDelete = async (id: number) => {
     try {
-      const response = await fetchWithRetry(`/api/activity-logs/${id}`, {
+      const response = await fetch(`/api/activity-logs/${id}`, {
         method: 'DELETE'
       });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete activity log');
+      }
 
       toast({
         title: "Success",
@@ -105,15 +65,7 @@ export default function Dashboard() {
   };
 
   const handleEdit = (log: ActivityLog) => {
-    setEditingLog(log);
-    setIsAddingLog(true);
-  };
-
-  const handleDrawerClose = (open: boolean) => {
-    setIsAddingLog(open);
-    if (!open) {
-      setEditingLog(undefined);
-    }
+    console.log("Edit Log:", log);
   };
 
   if (isLoadingActivity || isLoadingExercises) {
@@ -124,34 +76,16 @@ export default function Dashboard() {
     );
   }
 
-  if (activityError || exerciseError) {
-    return (
-      <div className="flex flex-col items-center justify-center h-64 gap-4">
-        <AlertCircle className="h-8 w-8 text-red-500" />
-        <p className="text-red-500">Failed to load data. Please try again later.</p>
-        <Button onClick={() => {
-          queryClient.invalidateQueries({ queryKey: ["/api/activity-logs"] });
-          queryClient.invalidateQueries({ queryKey: ["/api/exercise-logs"] });
-        }}>
-          Retry
-        </Button>
-      </div>
-    );
-  }
-
-  // Sort logs by date in descending order for the table
+  // Sort logs by date in ascending order for the chart
   const sortedLogs = [...(activityLogs || [])].sort(
-    (a, b) => parseISO(b.date).getTime() - parseISO(a.date).getTime()
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
   );
 
-  // Create chart data with chronological ordering (oldest to newest)
-  const chartData = [...(activityLogs || [])]
-    .sort((a, b) => parseISO(a.date).getTime() - parseISO(b.date).getTime())
-    .map(log => ({
-      date: format(parseISO(log.date), 'MMM d'),
-      painLevel: log.painLevel || 0,
-      steps: log.steps || 0
-    }));
+  const chartData = sortedLogs.map(log => ({
+    date: format(new Date(log.date), 'MMM d'),
+    painLevel: log.painLevel || 0,
+    steps: log.steps || 0
+  }));
 
   // Get today's exercise summary
   const today = new Date().toISOString().split('T')[0];
@@ -254,10 +188,10 @@ export default function Dashboard() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sortedLogs.map((log) => (
+              {activityLogs?.map((log) => (
                 <TableRow key={log.id}>
                   <TableCell className="font-medium">
-                    {format(parseISO(log.date), 'MMM d')}
+                    {format(new Date(log.date), 'MMM d')}
                   </TableCell>
                   <TableCell>{log.steps?.toLocaleString() ?? '-'}</TableCell>
                   <TableCell>{log.activity || '-'}</TableCell>
@@ -297,8 +231,7 @@ export default function Dashboard() {
 
       <ActivityLogForm 
         open={isAddingLog} 
-        onOpenChange={handleDrawerClose}
-        editLog={editingLog}
+        onOpenChange={setIsAddingLog}
       />
     </div>
   );

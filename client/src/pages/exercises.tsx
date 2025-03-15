@@ -16,15 +16,11 @@ interface ExerciseWithCategory extends Exercise {
 }
 
 export default function Exercises() {
-  const { data: exercises, isLoading } = useQuery<Exercise[]>({
+  const { data: exercises, isLoading } = useQuery<ExerciseWithCategory[]>({
     queryKey: ["/api/exercises"],
   });
 
-  const { data: categories, isLoading: loadingCategories } = useQuery<ExerciseCategory[]>({
-    queryKey: ["/api/exercise-categories"],
-  });
-
-  if (isLoading || loadingCategories) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -34,36 +30,31 @@ export default function Exercises() {
 
   // Group exercises by category
   const exercisesByCategory = exercises?.reduce((acc, exercise) => {
-    const category = categories?.find(c => c.id === exercise.categoryId);
-    if (category) {
-      if (!acc[category.name]) {
-        acc[category.name] = [];
-      }
-      acc[category.name].push({...exercise, category});
+    const categoryName = exercise.category.name;
+    if (!acc[categoryName]) {
+      acc[categoryName] = [];
     }
+    acc[categoryName].push(exercise);
     return acc;
   }, {} as Record<string, ExerciseWithCategory[]>);
-
-  // Sort categories by orderIndex
-  const sortedCategories = categories?.sort((a, b) => a.orderIndex - b.orderIndex);
 
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between space-x-4">
-        <h1 className="text-4xl font-bold tracking-tight">Nightly Injury Prevention Routine</h1>
+        <h1 className="text-4xl font-bold tracking-tight">Exercise Tracking</h1>
         <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white px-8">
           Log Workout
         </Button>
       </div>
 
       <div className="grid gap-6">
-        {sortedCategories?.map((category) => (
-          <Card key={category.id} className="bg-white rounded-lg shadow-sm">
+        {exercisesByCategory && Object.entries(exercisesByCategory).map(([category, exercises]) => (
+          <Card key={category} className="bg-white rounded-lg shadow-sm">
             <CardHeader className="border-b bg-white">
-              <CardTitle className="text-xl font-semibold">{category.name}</CardTitle>
+              <CardTitle className="text-xl font-semibold">{category}</CardTitle>
             </CardHeader>
             <CardContent className="divide-y">
-              {exercisesByCategory?.[category.name]?.map((exercise) => (
+              {exercises.map((exercise) => (
                 <div key={exercise.id} className="py-4 first:pt-4 last:pb-4">
                   <div className="flex items-center justify-between">
                     <div className="space-y-1">
@@ -101,9 +92,9 @@ export default function Exercises() {
                           <Input 
                             type="number" 
                             className="w-16 text-center" 
-                            placeholder={(exercise.duration / 60).toString()}
+                            placeholder={exercise.duration.toString()}
                           />
-                          <span className="text-sm text-gray-500">min</span>
+                          <span className="text-sm text-gray-500">sec</span>
                         </div>
                       )}
                     </div>
