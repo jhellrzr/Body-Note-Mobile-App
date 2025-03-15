@@ -1,36 +1,37 @@
 import { neonConfig } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-http';
-import { sql } from '@neondatabase/serverless';
-import ws from "ws";
+import { drizzle } from 'drizzle-orm/neon-serverless';
+import { Pool } from '@neondatabase/serverless';
 import * as schema from "@shared/schema";
 
-// Configure Neon
-neonConfig.webSocketConstructor = ws;
-neonConfig.useSecureWebSocket = true;
-
 if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL must be set. Did you forget to provision a database?");
+  throw new Error("DATABASE_URL, ensure the database is provisioned");
 }
 
 console.log('Initializing database connection...');
 
-// Create SQL client
-const queryClient = sql.neon(process.env.DATABASE_URL);
+// Create Pool instance with proper configuration
+const pool = new Pool({ 
+  connectionString: process.env.DATABASE_URL,
+  ssl: true 
+});
 
-try {
-  // Test connection
-  queryClient`SELECT NOW()`.then(testResult => {
-    console.log('Database connection test successful:', testResult);
-  }).catch(error => {
-    console.error('Database connection test failed:', error);
+// Export database instance
+export const db = drizzle(pool, { schema });
+
+// Test connection and log available tables
+pool.query('SELECT NOW()')
+  .then(() => {
+    console.log('Database connection successful');
+    // List tables
+    return pool.query(`
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_schema = 'public'
+    `);
+  })
+  .then(tables => {
+    console.log('Available tables:', tables.rows.map(r => r.table_name));
+  })
+  .catch(error => {
+    console.error('Database connection error:', error);
   });
-
-  // Create Drizzle instance
-  const _db = drizzle(queryClient, { schema });
-
-} catch (error) {
-  console.error('Database initialization error:', error);
-  throw error;
-}
-
-export const db = _db;
