@@ -44,13 +44,15 @@ export function ActivityLogForm({ open, onOpenChange }: Props) {
       steps: undefined,
       activity: "",
       painLevel: undefined,
-      symptoms: "",
-      notes: null
+      symptoms: ""
     },
   });
 
   async function onSubmit(data: InsertActivityLog) {
     try {
+      // Ensure we're using the selected date, not the form's initial date
+      const formattedDate = format(date, 'yyyy-MM-dd');
+
       const response = await fetch("/api/activity-logs", {
         method: "POST",
         headers: {
@@ -58,7 +60,7 @@ export function ActivityLogForm({ open, onOpenChange }: Props) {
         },
         body: JSON.stringify({
           ...data,
-          date: format(date, 'yyyy-MM-dd')
+          date: formattedDate
         })
       });
 
@@ -152,7 +154,6 @@ export function ActivityLogForm({ open, onOpenChange }: Props) {
                       <Input 
                         placeholder="What activities did you do?" 
                         {...field} 
-                        value={field.value ?? ''}
                       />
                     </FormControl>
                     <FormMessage />
@@ -193,7 +194,6 @@ export function ActivityLogForm({ open, onOpenChange }: Props) {
                       <Textarea
                         placeholder="Describe any symptoms or notes"
                         {...field}
-                        value={field.value ?? ''}
                       />
                     </FormControl>
                     <FormMessage />
