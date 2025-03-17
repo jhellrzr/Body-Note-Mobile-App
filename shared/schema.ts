@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, json, integer, date, real } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, json, varchar, boolean, integer, date, real } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -41,18 +41,10 @@ export const insertPainEntrySchema = createInsertSchema(painEntries).omit({
   date: true
 });
 
-export const insertActivityLogSchema = createInsertSchema(activityLogs)
-  .extend({
-    date: z.coerce.date(),
-    steps: z.number().min(0, "Steps must be a positive number"),
-    painLevel: z.number().min(0, "Pain level must be between 0 and 5").max(5, "Pain level must be between 0 and 5"),
-    activity: z.string().min(1, "Activity is required"),
-    symptoms: z.string().optional()
-  })
-  .omit({
-    id: true,
-    createdAt: true
-  });
+export const insertActivityLogSchema = createInsertSchema(activityLogs).omit({
+  id: true,
+  createdAt: true
+});
 
 // Type exports
 export type PainEntry = typeof painEntries.$inferSelect;

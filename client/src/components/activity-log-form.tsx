@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Form,
@@ -39,52 +40,33 @@ export function ActivityLogForm({ open, onOpenChange }: Props) {
   const form = useForm<InsertActivityLog>({
     resolver: zodResolver(insertActivityLogSchema),
     defaultValues: {
-      date: date,
+      date: format(new Date(), 'yyyy-MM-dd'),
       steps: undefined,
       activity: "",
       painLevel: undefined,
-      symptoms: ""
+      symptoms: "",
+      notes: null
     },
   });
 
-  // Reset form when drawer is opened
-  useEffect(() => {
-    if (open) {
-      const today = new Date();
-      setDate(today);
-      form.reset({
-        date: today,
-        steps: undefined,
-        activity: "",
-        painLevel: undefined,
-        symptoms: ""
-      });
-    }
-  }, [open, form]);
-
   async function onSubmit(data: InsertActivityLog) {
     try {
-      const formData = {
-        ...data,
-        date
-      };
-
-      console.log('Submitting form data:', formData);
-
       const response = await fetch("/api/activity-logs", {
         method: "POST",
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          ...data,
+          date: format(date, 'yyyy-MM-dd')
+        })
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Server response:', errorData);
-        throw new Error(errorData.message || 'Failed to save activity log');
+        throw new Error('Failed to save activity log');
       }
 
+      // Invalidate and refetch
       await queryClient.invalidateQueries({ queryKey: ["/api/activity-logs"] });
 
       toast({
@@ -92,6 +74,8 @@ export function ActivityLogForm({ open, onOpenChange }: Props) {
         description: "Activity log saved successfully"
       });
 
+      // Reset form and close drawer
+      form.reset();
       onOpenChange(false);
     } catch (error) {
       console.error("Failed to log activity:", error);
@@ -127,10 +111,9 @@ export function ActivityLogForm({ open, onOpenChange }: Props) {
                           onSelect={(newDate) => {
                             if (newDate) {
                               setDate(newDate);
-                              field.onChange(newDate);
+                              field.onChange(format(newDate, 'yyyy-MM-dd'));
                             }
                           }}
-                          initialFocus
                         />
                       </div>
                     </FormControl>
@@ -150,6 +133,7 @@ export function ActivityLogForm({ open, onOpenChange }: Props) {
                         type="number"
                         placeholder="Number of steps"
                         {...field}
+                        value={field.value ?? ''}
                         onChange={(e) => field.onChange(e.target.valueAsNumber)}
                       />
                     </FormControl>
@@ -168,6 +152,7 @@ export function ActivityLogForm({ open, onOpenChange }: Props) {
                       <Input 
                         placeholder="What activities did you do?" 
                         {...field} 
+                        value={field.value ?? ''}
                       />
                     </FormControl>
                     <FormMessage />
@@ -189,6 +174,7 @@ export function ActivityLogForm({ open, onOpenChange }: Props) {
                         step={0.5}
                         placeholder="Pain level"
                         {...field}
+                        value={field.value ?? ''}
                         onChange={(e) => field.onChange(e.target.valueAsNumber)}
                       />
                     </FormControl>
@@ -207,6 +193,7 @@ export function ActivityLogForm({ open, onOpenChange }: Props) {
                       <Textarea
                         placeholder="Describe any symptoms or notes"
                         {...field}
+                        value={field.value ?? ''}
                       />
                     </FormControl>
                     <FormMessage />

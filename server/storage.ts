@@ -35,16 +35,8 @@ export class DatabaseStorage implements IStorage {
 
   // Activity Log Methods
   async createActivityLog(log: InsertActivityLog): Promise<ActivityLog> {
-    try {
-      // Date is already properly handled by zod schema
-      const [newLog] = await db.insert(activityLogs)
-        .values(log)
-        .returning();
-      return newLog;
-    } catch (error) {
-      console.error('Error in createActivityLog:', error);
-      throw new Error(`Failed to create activity log: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
+    const [newLog] = await db.insert(activityLogs).values(log).returning();
+    return newLog;
   }
 
   async getActivityLogs(): Promise<ActivityLog[]> {
