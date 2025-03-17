@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer } from "http";
 import { storage } from "./storage";
-import { insertPainEntrySchema, insertEmailSubscriptionSchema, insertAnalyticsEventSchema, insertActivityLogSchema, insertExerciseLogSchema } from "@shared/schema";
+import { insertPainEntrySchema, insertEmailSubscriptionSchema, insertAnalyticsEventSchema, insertActivityLogSchema } from "@shared/schema";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 
@@ -63,51 +63,6 @@ export async function registerRoutes(app: Express) {
     } catch (error) {
       console.error('Error deleting activity log:', error);
       res.status(500).json({ error: "Failed to delete activity log" });
-    }
-  });
-
-  // Exercise Logs Routes
-  app.get("/api/exercise-logs", async (_req, res) => {
-    try {
-      const logs = await storage.getExerciseLogs();
-      res.json(logs);
-    } catch (error) {
-      console.error('Error fetching exercise logs:', error);
-      res.status(500).json({ error: "Failed to fetch exercise logs" });
-    }
-  });
-
-  app.post("/api/exercise-logs", validateRequest(insertExerciseLogSchema), async (req, res) => {
-    try {
-      const result = await storage.createExerciseLog(req.validatedData);
-      res.json(result);
-    } catch (error) {
-      console.error('Error creating exercise log:', error);
-      res.status(500).json({ error: "Failed to create exercise log" });
-    }
-  });
-
-  app.put("/api/exercise-logs/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      if (isNaN(id)) {
-        return res.status(400).json({ error: "Invalid ID format" });
-      }
-
-      const { completed } = req.body;
-      if (typeof completed !== 'boolean') {
-        return res.status(400).json({ error: "Completed status must be a boolean" });
-      }
-
-      const success = await storage.updateExerciseLog(id, completed);
-      if (!success) {
-        return res.status(404).json({ error: "Exercise log not found" });
-      }
-
-      res.json({ message: "Exercise log updated successfully" });
-    } catch (error) {
-      console.error('Error updating exercise log:', error);
-      res.status(500).json({ error: "Failed to update exercise log" });
     }
   });
 

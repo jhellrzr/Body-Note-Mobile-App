@@ -5,7 +5,6 @@ import { Toaster } from "@/components/ui/toaster";
 import Nav from "@/components/layout/nav";
 import Home from "@/pages/home";
 import Dashboard from "@/pages/dashboard";
-import Exercises from "@/pages/exercises";
 import NotFound from "@/pages/not-found";
 import SymptomTracker from "@/pages/symptom-tracker"; // This will be our renamed current home page
 import { SubscriptionButton } from "@/components/subscription-button";
@@ -17,7 +16,6 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/tracker" component={SymptomTracker} />
       <Route path="/dashboard" component={Dashboard} />
-      <Route path="/exercises" component={Exercises} />
       <Route component={NotFound} />
     </Switch>
   );
