@@ -15,7 +15,7 @@ export default function Nav() {
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           <Logo />
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
             {user ? (
               <>
                 <Button
@@ -39,6 +39,7 @@ export default function Nav() {
               <Button
                 variant="ghost"
                 size="sm"
+                className="whitespace-nowrap"
                 onClick={() => navigate("/auth")}
               >
                 <LogIn className="mr-2 h-4 w-4" />
