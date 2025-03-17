@@ -38,32 +38,37 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 flex min-h-[calc(100vh-4rem)] items-center justify-center">
-      <div className="grid gap-8 w-full max-w-5xl md:grid-cols-2">
-        <div className="flex flex-col justify-center space-y-6">
-          <div className="space-y-2">
-            <h1 className="text-3xl font-bold">Welcome to Body Note</h1>
-            <p className="text-gray-500 dark:text-gray-400">
-              Track your pain and recovery journey with precision and ease.
-              Create an account to access personalized injury tracking and recovery analytics.
-            </p>
+    <div className="flex flex-col min-h-[calc(100vh-4rem)]">
+      <div className="flex-grow container mx-auto px-4 py-8">
+        <div className="grid gap-8 w-full max-w-5xl mx-auto md:grid-cols-2">
+          <div className="flex flex-col justify-center space-y-6">
+            <div className="space-y-2">
+              <h1 className="text-3xl font-bold">Welcome to Body Note</h1>
+              <p className="text-gray-500 dark:text-gray-400">
+                Track your pain and recovery journey with precision and ease.
+                Create an account to access personalized injury tracking and recovery analytics.
+              </p>
+            </div>
+          </div>
+          <div>
+            <Tabs defaultValue="login" className="w-full">
+              <TabsList className="w-full grid grid-cols-2 mb-4">
+                <TabsTrigger value="login" className="flex-1">Login</TabsTrigger>
+                <TabsTrigger value="register" className="flex-1">Register</TabsTrigger>
+              </TabsList>
+              <TabsContent value="login">
+                <LoginForm />
+              </TabsContent>
+              <TabsContent value="register">
+                <RegisterForm />
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
-        <div>
-          <Tabs defaultValue="login" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Login</TabsTrigger>
-              <TabsTrigger value="register">Register</TabsTrigger>
-            </TabsList>
-            <TabsContent value="login">
-              <LoginForm />
-            </TabsContent>
-            <TabsContent value="register">
-              <RegisterForm />
-            </TabsContent>
-          </Tabs>
-        </div>
       </div>
+      <footer className="py-6 text-center text-sm text-gray-500">
+        Made with ❤️ in San Francisco
+      </footer>
     </div>
   );
 }
