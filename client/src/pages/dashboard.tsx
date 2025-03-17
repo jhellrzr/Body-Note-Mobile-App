@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
@@ -31,6 +32,7 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const [, navigate] = useLocation();
   const { toast } = useToast();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   // Query existing injuries
   const { data: injuries, isLoading } = useQuery<Injury[]>({
@@ -48,11 +50,20 @@ export default function DashboardPage() {
       const res = await apiRequest("POST", "/api/injuries", data);
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (newInjury) => {
       queryClient.invalidateQueries({ queryKey: ["/api/injuries"] });
       toast({
         title: "Success",
         description: "Injury created successfully",
+      });
+      setIsDialogOpen(false);
+      navigate(`/recovery/${newInjury.id}`);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create injury",
+        variant: "destructive",
       });
     },
   });
@@ -79,7 +90,7 @@ export default function DashboardPage() {
             Track and manage your recovery journey
           </p>
         </div>
-        <Dialog>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="mr-2 h-4 w-4" />

@@ -19,23 +19,42 @@ export default function RecoveryCenterPage() {
   });
 
   if (isLoading) {
-    return <div>Loading recovery center...</div>;
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-center min-h-[200px]">
+          Loading recovery center...
+        </div>
+      </div>
+    );
   }
 
   if (!injury) {
-    return <div>Injury not found</div>;
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex flex-col items-center justify-center min-h-[200px] space-y-4">
+          <p>Injury not found</p>
+          <Button variant="outline" onClick={() => navigate("/dashboard")}>
+            Return to Dashboard
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <Button
-        variant="ghost"
-        className="mb-8"
-        onClick={() => navigate("/dashboard")}
-      >
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        Back to Dashboard
-      </Button>
+      <div className="flex items-center justify-between mb-8">
+        <Button
+          variant="ghost"
+          onClick={() => navigate("/dashboard")}
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Dashboard
+        </Button>
+        <Button onClick={() => navigate("/")}>
+          Add New Pain Entry
+        </Button>
+      </div>
 
       <div className="space-y-8">
         <div>
