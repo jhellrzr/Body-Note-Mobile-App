@@ -79,6 +79,24 @@ export default function DashboardPage() {
     },
   });
 
+  const onSubmit = async (data: any) => {
+    try {
+      // Convert the date string to a proper ISO date string
+      const formattedData = {
+        ...data,
+        dateOfInjury: new Date(data.dateOfInjury).toISOString(),
+      };
+      createInjuryMutation.mutate(formattedData);
+    } catch (error) {
+      console.error('Form submission error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create injury. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (!user) return null;
 
   return (
@@ -106,12 +124,7 @@ export default function DashboardPage() {
             </DialogHeader>
             <Form {...form}>
               <form
-                onSubmit={form.handleSubmit((data) =>
-                  createInjuryMutation.mutate({
-                    ...data,
-                    userId: user.id,
-                  })
-                )}
+                onSubmit={form.handleSubmit(onSubmit)}
                 className="space-y-4"
               >
                 <FormField

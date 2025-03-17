@@ -92,7 +92,11 @@ export class DatabaseStorage implements IStorage {
 
   // Pain entry operations
   async createPainEntry(entry: InsertPainEntry): Promise<PainEntry> {
-    const [painEntry] = await db.insert(painEntries).values(entry).returning();
+    // Ensure painMarkers is properly structured as an array
+    const [painEntry] = await db.insert(painEntries).values({
+      ...entry,
+      painMarkers: Array.isArray(entry.painMarkers) ? entry.painMarkers : []
+    }).returning();
     return painEntry;
   }
 
