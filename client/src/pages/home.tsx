@@ -68,7 +68,7 @@ export default function HomePage() {
 
         <div className="mt-12 text-center">
           <p className="text-sm text-muted-foreground flex items-center justify-center gap-2">
-            Made with <Heart className="h-4 w-4 text-red-500" /> for your wellness journey
+            Made with <Heart className="h-4 w-4 text-red-500" /> in San Francisco
           </p>
         </div>
       </div>
