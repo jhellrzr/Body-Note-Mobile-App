@@ -5,8 +5,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
 import Nav from "@/components/layout/nav";
-import Home from "@/pages/home";
+import Dashboard from "@/pages/dashboard";
 import PublicPainTracker from "@/pages/public-pain-tracker";
+import RecoveryCenterPage from "@/pages/recovery-center";
 import AuthPage from "@/pages/auth";
 import NotFound from "@/pages/not-found";
 import { SubscriptionButton } from "@/components/subscription-button";
@@ -16,7 +17,8 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={PublicPainTracker} />
-      <ProtectedRoute path="/dashboard" component={Home} />
+      <ProtectedRoute path="/dashboard" component={Dashboard} />
+      <ProtectedRoute path="/recovery/:id" component={RecoveryCenterPage} />
       <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>

@@ -6,7 +6,9 @@ import {
   type InsertAnalyticsEvent,
   type AnalyticsEvent,
   type User,
-  type InsertUser
+  type InsertUser,
+  type Injury,
+  type InsertInjury
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
@@ -19,6 +21,11 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+
+  // Injury operations
+  createInjury(injury: InsertInjury): Promise<Injury>;
+  getInjuries(userId: number): Promise<Injury[]>;
+  getInjury(id: number): Promise<Injury | undefined>;
 
   // Existing operations
   createPainEntry(entry: InsertPainEntry): Promise<PainEntry>;
@@ -40,6 +47,7 @@ export class MemStorage implements IStorage {
   private emailSubscriptions: EmailSubscription[] = [];
   private analyticsEvents: AnalyticsEvent[] = [];
   private users: User[] = [];
+  private injuries: Injury[] = [];
   private nextId = 1;
   public sessionStore: session.Store;
 
@@ -66,6 +74,26 @@ export class MemStorage implements IStorage {
 
   async getUserByUsername(username: string): Promise<User | undefined> {
     return this.users.find(user => user.username === username);
+  }
+
+  // Injury operations
+  async createInjury(injuryData: InsertInjury): Promise<Injury> {
+    const injury = {
+      ...injuryData,
+      id: this.nextId++,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.injuries.push(injury);
+    return injury;
+  }
+
+  async getInjuries(userId: number): Promise<Injury[]> {
+    return this.injuries.filter(injury => injury.userId === userId);
+  }
+
+  async getInjury(id: number): Promise<Injury | undefined> {
+    return this.injuries.find(injury => injury.id === id);
   }
 
   // Pain entry operations

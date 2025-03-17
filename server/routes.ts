@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer } from "http";
 import { storage } from "./storage";
-import { insertPainEntrySchema, insertEmailSubscriptionSchema, insertAnalyticsEventSchema } from "@shared/schema";
+import { insertPainEntrySchema, insertEmailSubscriptionSchema, insertAnalyticsEventSchema, insertInjurySchema } from "@shared/schema";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 
@@ -26,12 +26,68 @@ export async function registerRoutes(app: Express) {
     };
   };
 
+  // Auth middleware
+  const requireAuth = (req: any, res: any, next: any) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+    next();
+  };
+
+  // Injury routes
+  app.post("/api/injuries", requireAuth, validateRequest(insertInjurySchema), async (req, res) => {
+    try {
+      const result = await storage.createInjury({
+        ...req.validatedData,
+        userId: req.user!.id
+      });
+      res.json(result);
+    } catch (error) {
+      console.error('Error creating injury:', error);
+      res.status(500).json({ error: "Failed to create injury" });
+    }
+  });
+
+  app.get("/api/injuries", requireAuth, async (req, res) => {
+    try {
+      const injuries = await storage.getInjuries(req.user!.id);
+      res.json(injuries);
+    } catch (error) {
+      console.error('Error fetching injuries:', error);
+      res.status(500).json({ error: "Failed to fetch injuries" });
+    }
+  });
+
+  app.get("/api/injuries/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid ID format" });
+      }
+
+      const injury = await storage.getInjury(id);
+      if (!injury) {
+        return res.status(404).json({ error: "Injury not found" });
+      }
+
+      // Security: Ensure user can only access their own injuries
+      if (injury.userId !== req.user!.id) {
+        return res.status(403).json({ error: "Unauthorized" });
+      }
+
+      res.json(injury);
+    } catch (error) {
+      console.error('Error fetching injury:', error);
+      res.status(500).json({ error: "Failed to fetch injury" });
+    }
+  });
+
+  // Keep existing pain entries routes
   app.post("/api/pain-entries", validateRequest(insertPainEntrySchema), async (req, res) => {
     try {
       const result = await storage.createPainEntry(req.validatedData);
       res.json(result);
     } catch (error) {
-      // Security: Don't expose internal error details
       console.error('Error creating pain entry:', error);
       res.status(500).json({ error: "Failed to create pain entry" });
     }
@@ -49,7 +105,6 @@ export async function registerRoutes(app: Express) {
 
   app.get("/api/pain-entries/:id", async (req, res) => {
     try {
-      // Security: Validate id parameter
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
         return res.status(400).json({ error: "Invalid ID format" });
