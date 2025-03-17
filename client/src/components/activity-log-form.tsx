@@ -40,7 +40,7 @@ export function ActivityLogForm({ open, onOpenChange }: Props) {
   const form = useForm<InsertActivityLog>({
     resolver: zodResolver(insertActivityLogSchema),
     defaultValues: {
-      date: format(new Date(), 'yyyy-MM-dd'),
+      date: format(date, 'yyyy-MM-dd'),
       steps: undefined,
       activity: "",
       painLevel: undefined,
@@ -50,7 +50,6 @@ export function ActivityLogForm({ open, onOpenChange }: Props) {
 
   async function onSubmit(data: InsertActivityLog) {
     try {
-      // Ensure we're using the selected date, not the form's initial date
       const formattedDate = format(date, 'yyyy-MM-dd');
 
       const response = await fetch("/api/activity-logs", {
@@ -68,7 +67,6 @@ export function ActivityLogForm({ open, onOpenChange }: Props) {
         throw new Error('Failed to save activity log');
       }
 
-      // Invalidate and refetch
       await queryClient.invalidateQueries({ queryKey: ["/api/activity-logs"] });
 
       toast({
@@ -76,7 +74,6 @@ export function ActivityLogForm({ open, onOpenChange }: Props) {
         description: "Activity log saved successfully"
       });
 
-      // Reset form and close drawer
       form.reset();
       onOpenChange(false);
     } catch (error) {
@@ -116,6 +113,7 @@ export function ActivityLogForm({ open, onOpenChange }: Props) {
                               field.onChange(format(newDate, 'yyyy-MM-dd'));
                             }
                           }}
+                          initialFocus
                         />
                       </div>
                     </FormControl>
@@ -135,7 +133,6 @@ export function ActivityLogForm({ open, onOpenChange }: Props) {
                         type="number"
                         placeholder="Number of steps"
                         {...field}
-                        value={field.value ?? ''}
                         onChange={(e) => field.onChange(e.target.valueAsNumber)}
                       />
                     </FormControl>
@@ -175,7 +172,6 @@ export function ActivityLogForm({ open, onOpenChange }: Props) {
                         step={0.5}
                         placeholder="Pain level"
                         {...field}
-                        value={field.value ?? ''}
                         onChange={(e) => field.onChange(e.target.valueAsNumber)}
                       />
                     </FormControl>
