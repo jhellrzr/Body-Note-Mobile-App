@@ -19,7 +19,6 @@ export default function Nav() {
     { name: "Home", path: "/" },
     { name: "Symptom Tracker", path: "/tracker" },
     { name: "Recovery Center", path: "/dashboard" },
-    { name: "Exercises", path: "/exercises" },
   ];
 
   const NavigationItems = () => (
