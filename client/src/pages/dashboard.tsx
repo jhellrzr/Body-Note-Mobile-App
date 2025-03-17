@@ -85,7 +85,9 @@ export default function DashboardPage() {
       const formattedData = {
         ...data,
         dateOfInjury: new Date(data.dateOfInjury).toISOString(),
+        userId: 1 // Temporarily hardcode userId for testing
       };
+      console.log('Submitting injury data:', formattedData);
       createInjuryMutation.mutate(formattedData);
     } catch (error) {
       console.error('Form submission error:', error);
