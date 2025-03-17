@@ -29,14 +29,19 @@ async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
+  if (!process.env.SESSION_SECRET) {
+    throw new Error("SESSION_SECRET environment variable is required");
+  }
+
   const sessionSettings: session.SessionOptions = {
-    secret: randomBytes(32).toString('hex'), // Generate a random secret for development
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     cookie: {
       secure: process.env.NODE_ENV === 'production',
       maxAge: 24 * 60 * 60 * 1000 // 24 hours
-    }
+    },
+    store: storage.sessionStore
   };
 
   app.set("trust proxy", 1);
@@ -62,6 +67,9 @@ export function setupAuth(app: Express) {
   passport.deserializeUser(async (id: number, done) => {
     try {
       const user = await storage.getUser(id);
+      if (!user) {
+        return done(null, false);
+      }
       done(null, user);
     } catch (err) {
       done(err);
@@ -84,13 +92,26 @@ export function setupAuth(app: Express) {
         if (err) return next(err);
         res.status(201).json(user);
       });
-    } catch (err) {
-      next(err);
+    } catch (err: any) {
+      res.status(400).json({ message: err.message || "Registration failed" });
     }
   });
 
-  app.post("/api/login", passport.authenticate("local"), (req, res) => {
-    res.status(200).json(req.user);
+  app.post("/api/login", (req, res, next) => {
+    passport.authenticate("local", (err, user, info) => {
+      if (err) {
+        return next(err);
+      }
+      if (!user) {
+        return res.status(401).json({ message: info?.message || "Invalid credentials" });
+      }
+      req.login(user, (err) => {
+        if (err) {
+          return next(err);
+        }
+        return res.json(user);
+      });
+    })(req, res, next);
   });
 
   app.post("/api/logout", (req, res, next) => {
