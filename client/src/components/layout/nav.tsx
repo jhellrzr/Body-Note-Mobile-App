@@ -1,12 +1,14 @@
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { LogOut } from "lucide-react";
+import { LogOut, LogIn } from "lucide-react";
+import { useLocation } from "wouter";
 import Logo from "./logo";
 import LanguageToggle from "./language-toggle";
 
 export default function Nav() {
   const { user, logoutMutation } = useAuth();
+  const [, navigate] = useLocation();
 
   return (
     <nav className="border-b">
@@ -14,15 +16,33 @@ export default function Nav() {
         <div className="flex h-16 items-center justify-between">
           <Logo />
           <div className="flex items-center gap-4">
-            {user && (
+            {user ? (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate("/dashboard")}
+                >
+                  Dashboard
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => logoutMutation.mutate()}
+                  disabled={logoutMutation.isPending}
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  {logoutMutation.isPending ? "Logging out..." : "Logout"}
+                </Button>
+              </>
+            ) : (
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => logoutMutation.mutate()}
-                disabled={logoutMutation.isPending}
+                onClick={() => navigate("/auth")}
               >
-                <LogOut className="mr-2 h-4 w-4" />
-                {logoutMutation.isPending ? "Logging out..." : "Logout"}
+                <LogIn className="mr-2 h-4 w-4" />
+                Sign In
               </Button>
             )}
             <LanguageToggle />

@@ -6,6 +6,7 @@ import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
 import Nav from "@/components/layout/nav";
 import Home from "@/pages/home";
+import PublicPainTracker from "@/pages/public-pain-tracker";
 import AuthPage from "@/pages/auth";
 import NotFound from "@/pages/not-found";
 import { SubscriptionButton } from "@/components/subscription-button";
@@ -14,7 +15,8 @@ import "./i18n"; // Import i18n configuration
 function Router() {
   return (
     <Switch>
-      <ProtectedRoute path="/" component={Home} />
+      <Route path="/" component={PublicPainTracker} />
+      <ProtectedRoute path="/dashboard" component={Home} />
       <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>
