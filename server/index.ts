@@ -1,10 +1,12 @@
 import express, { type Request, Response, NextFunction } from "express";
 import rateLimit from "express-rate-limit";
 import hpp from "hpp";
-import { registerRoutes } from "./routes";
+import { setupAuth } from "./auth";
 import { setupVite, serveStatic, log } from "./vite";
+import { createServer } from "http";
 
 const app = express();
+const server = createServer(app);
 
 // Security: Rate limiting
 const limiter = rateLimit({
@@ -68,12 +70,15 @@ app.use((req, res, next) => {
   next();
 });
 
+// Set up authentication routes
+setupAuth(app);
+
 // Error handling middleware
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   // Security: Don't expose internal error details
   const status = err.status || err.statusCode || 500;
-  const message = process.env.NODE_ENV === 'production' 
-    ? 'Internal Server Error' 
+  const message = process.env.NODE_ENV === 'production'
+    ? 'Internal Server Error'
     : err.message || 'Internal Server Error';
 
   if (status >= 500) {
@@ -84,8 +89,6 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
 });
 
 (async () => {
-  const server = await registerRoutes(app);
-
   // Security: Use secure session configuration
   app.set('trust proxy', 1);
 
@@ -101,11 +104,7 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   // ALWAYS serve the app on port 5000
   // this serves both the API and the client
   const port = 5000;
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
+  server.listen(port, "0.0.0.0", () => {
     log(`serving on port ${port}`);
   });
 })();
