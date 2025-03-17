@@ -79,9 +79,16 @@ export default function Dashboard() {
       steps: log.steps
     }));
 
-  // Sort logs by date in descending order for the table (newest to oldest)
+  // Sort logs by date and creation time in descending order for the table (newest to oldest)
   const sortedLogs = [...(activityLogs || [])].sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    (a, b) => {
+      const dateComparison = new Date(b.date).getTime() - new Date(a.date).getTime();
+      if (dateComparison === 0) {
+        // If dates are the same, sort by createdAt timestamp
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      }
+      return dateComparison;
+    }
   );
 
   return (
