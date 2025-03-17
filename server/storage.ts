@@ -35,8 +35,30 @@ export class DatabaseStorage implements IStorage {
 
   // Activity Log Methods
   async createActivityLog(log: InsertActivityLog): Promise<ActivityLog> {
-    const [newLog] = await db.insert(activityLogs).values(log).returning();
-    return newLog;
+    try {
+      console.log('Creating activity log with data:', log);
+
+      // Create the database record with proper date handling
+      const dbRecord = {
+        date: new Date(log.date),
+        steps: log.steps,
+        activity: log.activity,
+        painLevel: log.painLevel,
+        symptoms: log.symptoms || null
+      };
+
+      console.log('Transformed database record:', dbRecord);
+
+      const [newLog] = await db.insert(activityLogs)
+        .values(dbRecord)
+        .returning();
+
+      console.log('Successfully created new log:', newLog);
+      return newLog;
+    } catch (error) {
+      console.error('Error in createActivityLog:', error);
+      throw new Error(`Failed to create activity log: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   async getActivityLogs(): Promise<ActivityLog[]> {
@@ -45,7 +67,10 @@ export class DatabaseStorage implements IStorage {
 
   async updateActivityLog(id: number, log: Partial<InsertActivityLog>): Promise<ActivityLog> {
     const [updatedLog] = await db.update(activityLogs)
-      .set(log)
+      .set({
+        ...log,
+        date: log.date ? new Date(log.date) : undefined
+      })
       .where(eq(activityLogs.id, id))
       .returning();
     return updatedLog;

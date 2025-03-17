@@ -1,11 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Form,
@@ -48,23 +47,42 @@ export function ActivityLogForm({ open, onOpenChange }: Props) {
     },
   });
 
+  // Reset form when drawer is opened
+  useEffect(() => {
+    if (open) {
+      const today = new Date();
+      setDate(today);
+      form.reset({
+        date: format(today, 'yyyy-MM-dd'),
+        steps: undefined,
+        activity: "",
+        painLevel: undefined,
+        symptoms: ""
+      });
+    }
+  }, [open, form]);
+
   async function onSubmit(data: InsertActivityLog) {
     try {
-      const formattedDate = format(date, 'yyyy-MM-dd');
+      const formData = {
+        ...data,
+        date: format(date, 'yyyy-MM-dd')
+      };
+
+      console.log('Submitting form data:', formData);
 
       const response = await fetch("/api/activity-logs", {
         method: "POST",
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          ...data,
-          date: formattedDate
-        })
+        body: JSON.stringify(formData)
       });
 
       if (!response.ok) {
-        throw new Error('Failed to save activity log');
+        const errorData = await response.json();
+        console.error('Server response:', errorData);
+        throw new Error(errorData.message || 'Failed to save activity log');
       }
 
       await queryClient.invalidateQueries({ queryKey: ["/api/activity-logs"] });
@@ -74,7 +92,6 @@ export function ActivityLogForm({ open, onOpenChange }: Props) {
         description: "Activity log saved successfully"
       });
 
-      form.reset();
       onOpenChange(false);
     } catch (error) {
       console.error("Failed to log activity:", error);

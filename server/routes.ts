@@ -37,13 +37,20 @@ export async function registerRoutes(app: Express) {
     }
   });
 
-  app.post("/api/activity-logs", validateRequest(insertActivityLogSchema), async (req, res) => {
+  app.post("/api/activity-logs", validateRequest(insertActivityLogSchema), async (req: any, res) => {
     try {
+      console.log('Received activity log data:', req.validatedData);
+
       const result = await storage.createActivityLog(req.validatedData);
+      console.log('Created activity log:', result);
+
       res.json(result);
     } catch (error) {
       console.error('Error creating activity log:', error);
-      res.status(500).json({ error: "Failed to create activity log" });
+      res.status(500).json({ 
+        error: "Failed to create activity log",
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   });
 
