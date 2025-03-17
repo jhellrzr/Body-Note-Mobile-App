@@ -15,10 +15,13 @@ export default function Logo() {
             {t('app.name')}
           </span>
           <span className="text-xs text-muted-foreground leading-none">
-            Track your recovery journey and manage your wellness
+            {t('app.tagline')}
           </span>
         </div>
       </div>
+      <span className="text-xs text-muted-foreground hidden md:block">
+        Made with <Heart className="w-3 h-3 inline text-red-500" /> in San Francisco
+      </span>
     </div>
   );
 }

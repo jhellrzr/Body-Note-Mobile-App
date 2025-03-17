@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, json, varchar, boolean, integer, date, real } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, json, varchar, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -10,12 +10,20 @@ export const painTypes = {
   PURPLE: "numbness"
 } as const;
 
-export interface PainMarker {
+export interface PainMarker2D {
   type: keyof typeof painTypes;
   intensity: number;
   points: { x: number; y: number }[];
   brushSize: number;
 }
+
+export interface PainMarker3D {
+  color: keyof typeof painTypes;
+  intensity: number;
+  position: { x: number; y: number; z: number };
+}
+
+export type PainMarker = PainMarker2D | PainMarker3D;
 
 export const painEntries = pgTable("pain_entries", {
   id: serial("id").primaryKey(),
@@ -25,30 +33,48 @@ export const painEntries = pgTable("pain_entries", {
   notes: text("notes")
 });
 
-export const activityLogs = pgTable("activity_logs", {
+export const emailSubscriptions = pgTable("email_subscriptions", {
   id: serial("id").primaryKey(),
-  date: date("date").notNull(),
-  steps: integer("steps").notNull(),
-  activity: text("activity").notNull(),
-  painLevel: real("pain_level").notNull(),
-  symptoms: text("symptoms"),
-  createdAt: timestamp("created_at").notNull().defaultNow()
+  email: varchar("email", { length: 255 }).notNull().unique(),
+  dateSubscribed: timestamp("date_subscribed").notNull().defaultNow(),
+  isVerified: boolean("is_verified").notNull().default(false),
+  verificationToken: varchar("verification_token", { length: 64 }),
+  lastUpdated: timestamp("last_updated").notNull().defaultNow()
 });
 
-// Schemas for data insertion
+// Analytics events table
+export const analyticsEvents = pgTable("analytics_events", {
+  id: serial("id").primaryKey(),
+  eventName: varchar("event_name", { length: 255 }).notNull(),
+  timestamp: timestamp("timestamp").notNull().defaultNow(),
+  metadata: json("metadata").$type<Record<string, any>>().default({}),
+  sessionId: varchar("session_id", { length: 64 }),
+  userAgent: text("user_agent")
+});
+
 export const insertPainEntrySchema = createInsertSchema(painEntries).omit({
   id: true,
   date: true
 });
 
-export const insertActivityLogSchema = createInsertSchema(activityLogs).omit({
+export const insertEmailSubscriptionSchema = createInsertSchema(emailSubscriptions, {
+  email: z.string().email("Invalid email format"),
+}).omit({
   id: true,
-  createdAt: true
+  dateSubscribed: true,
+  lastUpdated: true,
+  isVerified: true,
+  verificationToken: true
 });
 
-// Type exports
-export type PainEntry = typeof painEntries.$inferSelect;
-export type InsertPainEntry = z.infer<typeof insertPainEntrySchema>;
+export const insertAnalyticsEventSchema = createInsertSchema(analyticsEvents).omit({
+  id: true,
+  timestamp: true
+});
 
-export type ActivityLog = typeof activityLogs.$inferSelect;
-export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
+export type InsertPainEntry = z.infer<typeof insertPainEntrySchema>;
+export type PainEntry = typeof painEntries.$inferSelect;
+export type EmailSubscription = typeof emailSubscriptions.$inferSelect;
+export type InsertEmailSubscription = z.infer<typeof insertEmailSubscriptionSchema>;
+export type AnalyticsEvent = typeof analyticsEvents.$inferSelect;
+export type InsertAnalyticsEvent = z.infer<typeof insertAnalyticsEventSchema>;

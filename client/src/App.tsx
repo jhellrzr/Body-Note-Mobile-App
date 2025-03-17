@@ -4,9 +4,7 @@ import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
 import Nav from "@/components/layout/nav";
 import Home from "@/pages/home";
-import Dashboard from "@/pages/dashboard";
 import NotFound from "@/pages/not-found";
-import SymptomTracker from "@/pages/symptom-tracker"; // This will be our renamed current home page
 import { SubscriptionButton } from "@/components/subscription-button";
 import "./i18n"; // Import i18n configuration
 
@@ -14,8 +12,6 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
-      <Route path="/tracker" component={SymptomTracker} />
-      <Route path="/dashboard" component={Dashboard} />
       <Route component={NotFound} />
     </Switch>
   );

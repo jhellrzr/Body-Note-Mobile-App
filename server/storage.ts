@@ -1,62 +1,99 @@
-import { eq } from "drizzle-orm";
-import { db } from "./db";
-import { painEntries, activityLogs, type PainEntry, type InsertPainEntry, type ActivityLog, type InsertActivityLog } from "@shared/schema";
+import { 
+  type PainEntry, 
+  type InsertPainEntry,
+  type EmailSubscription, 
+  type InsertEmailSubscription,
+  type InsertAnalyticsEvent,
+  type AnalyticsEvent 
+} from "@shared/schema";
 
+// Temporary in-memory storage for development
 export interface IStorage {
-  // Pain Entries
   createPainEntry(entry: InsertPainEntry): Promise<PainEntry>;
   getPainEntries(): Promise<PainEntry[]>;
   getPainEntry(id: number): Promise<PainEntry | undefined>;
-
-  // Activity Logs
-  createActivityLog(log: InsertActivityLog): Promise<ActivityLog>;
-  getActivityLogs(): Promise<ActivityLog[]>;
-  updateActivityLog(id: number, log: Partial<InsertActivityLog>): Promise<ActivityLog>;
-  deleteActivityLog(id: number): Promise<boolean>;
+  createEmailSubscription(email: InsertEmailSubscription): Promise<EmailSubscription>;
+  verifyEmailSubscription(token: string): Promise<boolean>;
+  getEmailSubscription(email: string): Promise<EmailSubscription | undefined>;
+  isEmailSubscribed(email: string): Promise<boolean>;
+  trackEvent(event: InsertAnalyticsEvent): Promise<AnalyticsEvent>;
+  getEvents(eventName?: string): Promise<AnalyticsEvent[]>;
 }
 
-export class DatabaseStorage implements IStorage {
-  // Pain Entry Methods
+export class MemStorage implements IStorage {
+  private painEntries: PainEntry[] = [];
+  private emailSubscriptions: EmailSubscription[] = [];
+  private analyticsEvents: AnalyticsEvent[] = [];
+  private nextId = 1;
+
   async createPainEntry(entry: InsertPainEntry): Promise<PainEntry> {
-    const [newEntry] = await db.insert(painEntries).values(entry).returning();
+    const newEntry = {
+      ...entry,
+      id: this.nextId++,
+      date: new Date()
+    };
+    this.painEntries.push(newEntry);
     return newEntry;
   }
 
   async getPainEntries(): Promise<PainEntry[]> {
-    return db.select().from(painEntries);
+    return this.painEntries;
   }
 
   async getPainEntry(id: number): Promise<PainEntry | undefined> {
-    const [entry] = await db.select()
-      .from(painEntries)
-      .where(eq(painEntries.id, id));
-    return entry;
+    return this.painEntries.find(entry => entry.id === id);
   }
 
-  // Activity Log Methods
-  async createActivityLog(log: InsertActivityLog): Promise<ActivityLog> {
-    const [newLog] = await db.insert(activityLogs).values(log).returning();
-    return newLog;
+  async createEmailSubscription(data: InsertEmailSubscription): Promise<EmailSubscription> {
+    const subscription = {
+      id: this.nextId++,
+      email: data.email,
+      dateSubscribed: new Date(),
+      isVerified: false,
+      verificationToken: Math.random().toString(36).substring(2),
+      lastUpdated: new Date()
+    };
+    this.emailSubscriptions.push(subscription);
+    return subscription;
   }
 
-  async getActivityLogs(): Promise<ActivityLog[]> {
-    return db.select().from(activityLogs).orderBy(activityLogs.date);
+  async verifyEmailSubscription(token: string): Promise<boolean> {
+    const subscription = this.emailSubscriptions.find(s => s.verificationToken === token);
+    if (subscription) {
+      subscription.isVerified = true;
+      subscription.verificationToken = null;
+      subscription.lastUpdated = new Date();
+      return true;
+    }
+    return false;
   }
 
-  async updateActivityLog(id: number, log: Partial<InsertActivityLog>): Promise<ActivityLog> {
-    const [updatedLog] = await db.update(activityLogs)
-      .set(log)
-      .where(eq(activityLogs.id, id))
-      .returning();
-    return updatedLog;
+  async getEmailSubscription(email: string): Promise<EmailSubscription | undefined> {
+    return this.emailSubscriptions.find(s => s.email === email);
   }
 
-  async deleteActivityLog(id: number): Promise<boolean> {
-    const [deletedLog] = await db.delete(activityLogs)
-      .where(eq(activityLogs.id, id))
-      .returning();
-    return !!deletedLog;
+  async isEmailSubscribed(email: string): Promise<boolean> {
+    const subscription = await this.getEmailSubscription(email);
+    return !!subscription?.isVerified;
+  }
+
+  async trackEvent(event: InsertAnalyticsEvent): Promise<AnalyticsEvent> {
+    const newEvent = {
+      ...event,
+      id: this.nextId++,
+      timestamp: new Date()
+    };
+    this.analyticsEvents.push(newEvent);
+    return newEvent;
+  }
+
+  async getEvents(eventName?: string): Promise<AnalyticsEvent[]> {
+    if (eventName) {
+      return this.analyticsEvents.filter(e => e.eventName === eventName);
+    }
+    return this.analyticsEvents;
   }
 }
 
-export const storage = new DatabaseStorage();
+// Export an instance of MemStorage instead of DatabaseStorage
+export const storage = new MemStorage();
