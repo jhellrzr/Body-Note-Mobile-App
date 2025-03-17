@@ -43,7 +43,7 @@ export const insertPainEntrySchema = createInsertSchema(painEntries).omit({
 
 export const insertActivityLogSchema = createInsertSchema(activityLogs)
   .extend({
-    date: z.string(),
+    date: z.coerce.date(),
     steps: z.number().min(0, "Steps must be a positive number"),
     painLevel: z.number().min(0, "Pain level must be between 0 and 5").max(5, "Pain level must be between 0 and 5"),
     activity: z.string().min(1, "Activity is required"),

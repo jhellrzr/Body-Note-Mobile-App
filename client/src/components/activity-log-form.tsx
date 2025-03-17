@@ -39,7 +39,7 @@ export function ActivityLogForm({ open, onOpenChange }: Props) {
   const form = useForm<InsertActivityLog>({
     resolver: zodResolver(insertActivityLogSchema),
     defaultValues: {
-      date: format(date, 'yyyy-MM-dd'),
+      date: date,
       steps: undefined,
       activity: "",
       painLevel: undefined,
@@ -53,7 +53,7 @@ export function ActivityLogForm({ open, onOpenChange }: Props) {
       const today = new Date();
       setDate(today);
       form.reset({
-        date: format(today, 'yyyy-MM-dd'),
+        date: today,
         steps: undefined,
         activity: "",
         painLevel: undefined,
@@ -66,7 +66,7 @@ export function ActivityLogForm({ open, onOpenChange }: Props) {
     try {
       const formData = {
         ...data,
-        date: format(date, 'yyyy-MM-dd')
+        date
       };
 
       console.log('Submitting form data:', formData);
@@ -127,7 +127,7 @@ export function ActivityLogForm({ open, onOpenChange }: Props) {
                           onSelect={(newDate) => {
                             if (newDate) {
                               setDate(newDate);
-                              field.onChange(format(newDate, 'yyyy-MM-dd'));
+                              field.onChange(newDate);
                             }
                           }}
                           initialFocus

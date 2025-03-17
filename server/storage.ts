@@ -36,24 +36,10 @@ export class DatabaseStorage implements IStorage {
   // Activity Log Methods
   async createActivityLog(log: InsertActivityLog): Promise<ActivityLog> {
     try {
-      console.log('Creating activity log with data:', log);
-
-      // Create the database record with proper date handling
-      const dbRecord = {
-        date: new Date(log.date),
-        steps: log.steps,
-        activity: log.activity,
-        painLevel: log.painLevel,
-        symptoms: log.symptoms || null
-      };
-
-      console.log('Transformed database record:', dbRecord);
-
+      // Date is already properly handled by zod schema
       const [newLog] = await db.insert(activityLogs)
-        .values(dbRecord)
+        .values(log)
         .returning();
-
-      console.log('Successfully created new log:', newLog);
       return newLog;
     } catch (error) {
       console.error('Error in createActivityLog:', error);
@@ -67,10 +53,7 @@ export class DatabaseStorage implements IStorage {
 
   async updateActivityLog(id: number, log: Partial<InsertActivityLog>): Promise<ActivityLog> {
     const [updatedLog] = await db.update(activityLogs)
-      .set({
-        ...log,
-        date: log.date ? new Date(log.date) : undefined
-      })
+      .set(log)
       .where(eq(activityLogs.id, id))
       .returning();
     return updatedLog;
