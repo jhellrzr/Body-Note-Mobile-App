@@ -71,15 +71,15 @@ export default function Dashboard() {
     );
   }
 
-  // Sort logs by date in ascending order for the chart
+  // Sort logs by date in descending order for the chart
   const sortedLogs = [...(activityLogs || [])].sort(
-    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
   );
 
   const chartData = sortedLogs.map(log => ({
     date: format(new Date(log.date), 'MMM d'),
-    painLevel: log.painLevel || 0,
-    steps: log.steps || 0
+    painLevel: log.painLevel,
+    steps: log.steps
   }));
 
   return (
@@ -155,23 +155,23 @@ export default function Dashboard() {
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <TableHead className="w-[120px] font-semibold">Date</TableHead>
-                <TableHead className="font-semibold">Steps</TableHead>
+                <TableHead className="w-[100px] font-semibold">Date</TableHead>
+                <TableHead className="w-[100px] font-semibold">Steps</TableHead>
                 <TableHead className="font-semibold">Activity</TableHead>
-                <TableHead className="font-semibold">Pain Level</TableHead>
+                <TableHead className="w-[100px] font-semibold">Pain Level</TableHead>
                 <TableHead className="font-semibold">Symptoms</TableHead>
                 <TableHead className="w-[50px]"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {activityLogs?.map((log) => (
+              {sortedLogs.map((log) => (
                 <TableRow key={log.id}>
                   <TableCell className="font-medium">
                     {format(new Date(log.date), 'MMM d')}
                   </TableCell>
-                  <TableCell>{log.steps?.toLocaleString() ?? '-'}</TableCell>
-                  <TableCell>{log.activity || '-'}</TableCell>
-                  <TableCell>{log.painLevel?.toFixed(1) ?? '-'}</TableCell>
+                  <TableCell>{log.steps.toLocaleString()}</TableCell>
+                  <TableCell>{log.activity}</TableCell>
+                  <TableCell>{log.painLevel.toFixed(1)}</TableCell>
                   <TableCell>{log.symptoms || 'No symptoms'}</TableCell>
                   <TableCell>
                     <DropdownMenu>

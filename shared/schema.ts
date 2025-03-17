@@ -28,30 +28,11 @@ export const painEntries = pgTable("pain_entries", {
 export const activityLogs = pgTable("activity_logs", {
   id: serial("id").primaryKey(),
   date: date("date").notNull(),
-  steps: integer("steps"),
-  activity: varchar("activity", { length: 255 }),
-  painLevel: real("pain_level"),
+  steps: integer("steps").notNull(),
+  activity: text("activity").notNull(),
+  painLevel: real("pain_level").notNull(),
   symptoms: text("symptoms"),
-  notes: text("notes"),
   createdAt: timestamp("created_at").notNull().defaultNow()
-});
-
-export const emailSubscriptions = pgTable("email_subscriptions", {
-  id: serial("id").primaryKey(),
-  email: varchar("email", { length: 255 }).notNull().unique(),
-  dateSubscribed: timestamp("date_subscribed").notNull().defaultNow(),
-  isVerified: boolean("is_verified").notNull().default(false),
-  verificationToken: varchar("verification_token", { length: 64 }),
-  lastUpdated: timestamp("last_updated").notNull().defaultNow()
-});
-
-export const analyticsEvents = pgTable("analytics_events", {
-  id: serial("id").primaryKey(),
-  eventName: varchar("event_name", { length: 255 }).notNull(),
-  timestamp: timestamp("timestamp").notNull().defaultNow(),
-  metadata: json("metadata").$type<Record<string, any>>().default({}),
-  sessionId: varchar("session_id", { length: 64 }),
-  userAgent: text("user_agent")
 });
 
 // Schemas for data insertion
@@ -65,30 +46,9 @@ export const insertActivityLogSchema = createInsertSchema(activityLogs).omit({
   createdAt: true
 });
 
-export const insertEmailSubscriptionSchema = createInsertSchema(emailSubscriptions, {
-  email: z.string().email("Invalid email format"),
-}).omit({
-  id: true,
-  dateSubscribed: true,
-  lastUpdated: true,
-  isVerified: true,
-  verificationToken: true
-});
-
-export const insertAnalyticsEventSchema = createInsertSchema(analyticsEvents).omit({
-  id: true,
-  timestamp: true
-});
-
 // Type exports
 export type PainEntry = typeof painEntries.$inferSelect;
 export type InsertPainEntry = z.infer<typeof insertPainEntrySchema>;
 
 export type ActivityLog = typeof activityLogs.$inferSelect;
 export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
-
-export type EmailSubscription = typeof emailSubscriptions.$inferSelect;
-export type InsertEmailSubscription = z.infer<typeof insertEmailSubscriptionSchema>;
-
-export type AnalyticsEvent = typeof analyticsEvents.$inferSelect;
-export type InsertAnalyticsEvent = z.infer<typeof insertAnalyticsEventSchema>;
