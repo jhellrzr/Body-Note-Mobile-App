@@ -87,7 +87,12 @@ export const insertUserSchema = createInsertSchema(users, {
   createdAt: true
 });
 
-export const insertInjurySchema = createInsertSchema(injuries).omit({
+export const insertInjurySchema = createInsertSchema(injuries, {
+  dateOfInjury: z.coerce.date(),
+  name: z.string().min(1, "Name is required"),
+  description: z.string().optional(),
+  status: z.string().default("active")
+}).omit({
   id: true,
   createdAt: true,
   updatedAt: true
