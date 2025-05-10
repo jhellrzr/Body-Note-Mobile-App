@@ -9,6 +9,7 @@ import {
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
+import { lightHapticFeedback } from "@/lib/haptics";
 
 export default function MobileNav() {
   const [location] = useLocation();
@@ -72,11 +73,20 @@ function NavItem({
   label: string;
   isActive: boolean;
 }) {
+  const handleClick = () => {
+    // Provide tactile feedback when navigation item is clicked
+    lightHapticFeedback();
+  };
+  
   return (
     <Link href={href}>
-      <a className="flex flex-col items-center justify-center w-full h-full">
+      <a 
+        className="flex flex-col items-center justify-center w-full h-full"
+        onClick={handleClick}
+        onTouchStart={() => {}}  // Empty handler to enable active state styling on touch
+      >
         <div className={cn(
-          "flex flex-col items-center justify-center",
+          "flex flex-col items-center justify-center transition-transform active:scale-95",
           isActive ? "text-primary" : "text-muted-foreground"
         )}>
           {icon}
