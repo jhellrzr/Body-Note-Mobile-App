@@ -21,7 +21,7 @@ export function InstallPwaButton() {
     }
   }, [isInstallable]);
 
-  if (!showButton) return null;
+  if (!showButton) return <></>;  // Return empty fragment instead of null
 
   return (
     <div className="fixed bottom-20 right-4 z-50 shadow-lg rounded-full">
