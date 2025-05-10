@@ -1,14 +1,12 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Camera, Upload, Shapes, Lock, Image, HomeIcon } from "lucide-react";
+import { Camera, Upload, HomeIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import PainMarkerCanvas from "@/components/pain-marker/canvas";
-import ModelViewer from "@/components/model-viewer/model-viewer";
 import ColorSelector from "@/components/pain-marker/color-selector";
 import IntensitySelector from "@/components/pain-marker/intensity-selector";
 import BrushSizeSelector from "@/components/pain-marker/brush-size-selector";
-import BodyPartSelector from "@/components/body-part-selector/body-part-selector";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -16,7 +14,7 @@ import { useAnalytics } from "@/hooks/use-analytics";
 import type { PainEntry } from "@shared/schema";
 import type { PainMarker } from "@/components/pain-marker/canvas";
 
-type Mode = 'upload' | 'model' | 'drawing' | '2d-model';
+type Mode = 'upload' | 'drawing';
 
 export default function PublicPainTracker() {
   // Keeping the existing functionality from home.tsx
@@ -26,9 +24,6 @@ export default function PublicPainTracker() {
   const [selectedColor, setSelectedColor] = useState<string>("RED");
   const [intensity, setIntensity] = useState(1);
   const [brushSize, setBrushSize] = useState(6);
-  const [isModelImage, setIsModelImage] = useState(false);
-  const [selectedPart, setSelectedPart] = useState<string | null>(null);
-  const [selectedSide, setSelectedSide] = useState<string | null>(null);
   const { toast } = useToast();
   const { trackEvent } = useAnalytics();
 
@@ -66,7 +61,6 @@ export default function PublicPainTracker() {
       const result = e.target?.result;
       if (typeof result === 'string') {
         setImage(result);
-        setIsModelImage(false);
         setMode('drawing');
         trackEvent("started_funnel", { method: source });
       }
@@ -82,28 +76,9 @@ export default function PublicPainTracker() {
     reader.readAsDataURL(file);
   };
 
-  const handle2DModelSelect = (part: string, side: string | null, view: string) => {
-    const sidePrefix = side ? `${side.toLowerCase()}-` : '';
-    const imagePath = `/assets/body-parts/${part}/${sidePrefix}${view.toLowerCase()}.jpg`;
-    setImage(imagePath);
-    setIsModelImage(true);
-    setSelectedPart(part);
-    setSelectedSide(side);
-    setMode('drawing');
-    trackEvent("started_funnel", { method: "2d-model", part, side, view });
-  };
-
   const handleDrawingBack = () => {
-    if (isModelImage) {
-      setImage(null);
-      setMode('2d-model');
-    } else {
-      setImage(null);
-      setIsModelImage(false);
-      setSelectedPart(null);
-      setSelectedSide(null);
-      setMode('upload');
-    }
+    setImage(null);
+    setMode('upload');
   };
 
   const handleSave = (imageUrl: string, painMarkers: PainMarker[]) => {
@@ -163,42 +138,7 @@ export default function PublicPainTracker() {
                   {t('upload.uploadImage')}
                 </Button>
               </div>
-
-              <div>
-                <Button
-                  className="w-full h-16"
-                  variant="outline"
-                  onClick={() => {
-                    setMode('2d-model');
-                    trackEvent("started_funnel", { method: "2d-model" });
-                  }}
-                >
-                  <Image className="mr-2 h-6 w-6" />
-                  {t('upload.use2DModel')}
-                </Button>
-              </div>
-
-              <div>
-                <Button
-                  className="w-full h-16"
-                  variant="outline"
-                  disabled
-                >
-                  <Lock className="mr-2 h-6 w-6" />
-                  <Shapes className="mr-2 h-6 w-6" />
-                  {t('upload.use3DModel')}
-                </Button>
-              </div>
             </div>
-          )}
-
-          {mode === '2d-model' && (
-            <BodyPartSelector
-              onSelect={handle2DModelSelect}
-              onBack={() => setMode('upload')}
-              selectedPart={selectedPart}
-              selectedSide={selectedSide}
-            />
           )}
 
           {mode === 'drawing' && image && (
@@ -211,31 +151,24 @@ export default function PublicPainTracker() {
                   {t('common.back')}
                 </Button>
                 <div className="flex items-center space-x-2">
-                  {!isModelImage && (
-                    <>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        id="upload-different"
-                        onChange={(e) => handleFileSelect(e, 'upload')}
-                        className="absolute w-0 h-0 opacity-0"
-                      />
-                      <Button
-                        variant="outline"
-                        onClick={() => document.getElementById('upload-different')?.click()}
-                      >
-                        <Upload className="mr-2 h-4 w-4" />
-                        {t('upload.reupload')}
-                      </Button>
-                    </>
-                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    id="upload-different"
+                    onChange={(e) => handleFileSelect(e, 'upload')}
+                    className="absolute w-0 h-0 opacity-0"
+                  />
+                  <Button
+                    variant="outline"
+                    onClick={() => document.getElementById('upload-different')?.click()}
+                  >
+                    <Upload className="mr-2 h-4 w-4" />
+                    {t('upload.reupload')}
+                  </Button>
                   <Button
                     variant="outline"
                     onClick={() => {
                       setImage(null);
-                      setIsModelImage(false);
-                      setSelectedPart(null);
-                      setSelectedSide(null);
                       setMode('upload');
                     }}
                   >

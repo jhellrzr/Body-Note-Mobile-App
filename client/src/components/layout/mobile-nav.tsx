@@ -1,20 +1,16 @@
 import { Link, useLocation } from "wouter";
 import { 
-  Home, 
-  BarChart2, 
-  Heart, 
-  User,
-  ActivitySquare
+  Home,
+  Settings,
+  Info
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 import { lightHapticFeedback } from "@/lib/haptics";
 
 export default function MobileNav() {
   const [location] = useLocation();
   const isMobile = useIsMobile();
-  const { user } = useAuth();
   
   if (!isMobile) return <></>;
   
@@ -27,37 +23,19 @@ export default function MobileNav() {
         isActive={location === "/"} 
       />
       
-      {user ? (
-        <>
-          <NavItem 
-            href="/dashboard" 
-            icon={<BarChart2 className="w-6 h-6" />} 
-            label="Dashboard"
-            isActive={location === "/dashboard"}
-          />
-          
-          <NavItem 
-            href="/tracking" 
-            icon={<ActivitySquare className="w-6 h-6" />} 
-            label="Track"
-            isActive={location.startsWith("/tracking")}
-          />
-          
-          <NavItem 
-            href="/recovery" 
-            icon={<Heart className="w-6 h-6" />} 
-            label="Recovery"
-            isActive={location.startsWith("/recovery")}
-          />
-        </>
-      ) : (
-        <NavItem 
-          href="/auth" 
-          icon={<User className="w-6 h-6" />} 
-          label="Account"
-          isActive={location === "/auth"}
-        />
-      )}
+      <NavItem 
+        href="/about" 
+        icon={<Info className="w-6 h-6" />} 
+        label="About"
+        isActive={location === "/about"}
+      />
+      
+      <NavItem 
+        href="/settings" 
+        icon={<Settings className="w-6 h-6" />} 
+        label="Settings"
+        isActive={location === "/settings"}
+      />
     </nav>
   );
 }

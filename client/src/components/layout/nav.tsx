@@ -1,13 +1,11 @@
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { LogOut, LogIn } from "lucide-react";
+import { Info, Settings } from "lucide-react";
 import { useLocation } from "wouter";
 import Logo from "./logo";
 import LanguageToggle from "./language-toggle";
 
 export default function Nav() {
-  const { user, logoutMutation } = useAuth();
   const [, navigate] = useLocation();
 
   return (
@@ -16,36 +14,22 @@ export default function Nav() {
         <div className="flex h-16 items-center justify-between">
           <Logo />
           <div className="flex items-center gap-2">
-            {user ? (
-              <>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigate("/dashboard")}
-                >
-                  Dashboard
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => logoutMutation.mutate()}
-                  disabled={logoutMutation.isPending}
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  {logoutMutation.isPending ? "Logging out..." : "Logout"}
-                </Button>
-              </>
-            ) : (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="whitespace-nowrap"
-                onClick={() => navigate("/auth")}
-              >
-                <LogIn className="mr-2 h-4 w-4" />
-                Sign In
-              </Button>
-            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate("/about")}
+            >
+              <Info className="mr-2 h-4 w-4" />
+              About
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate("/settings")}
+            >
+              <Settings className="mr-2 h-4 w-4" />
+              Settings
+            </Button>
             <LanguageToggle />
           </div>
         </div>
