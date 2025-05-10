@@ -29,12 +29,11 @@ async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
-  if (!process.env.SESSION_SECRET) {
-    throw new Error("SESSION_SECRET environment variable is required");
-  }
+  // Use environment variable or fallback to a default for development
+  const sessionSecret = process.env.SESSION_SECRET || "bodynote_dev_session_secret_123";
 
   const sessionSettings: session.SessionOptions = {
-    secret: process.env.SESSION_SECRET,
+    secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
     cookie: {

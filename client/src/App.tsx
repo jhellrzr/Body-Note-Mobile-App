@@ -11,6 +11,7 @@ import RecoveryCenterPage from "@/pages/recovery-center";
 import AuthPage from "@/pages/auth";
 import NotFound from "@/pages/not-found";
 import { SubscriptionButton } from "@/components/subscription-button";
+import { InstallPwaButton } from "@/components/install-pwa-button";
 import "./i18n"; // Import i18n configuration
 
 function Router() {
